@@ -83,12 +83,21 @@
                 <i class="ph-bold ph-camera"></i>
                 <span>Trình quản lý AC / DIT</span>
             </h1>
-            <!-- Hiển thị User ID và Tên chủ sở hữu -->
+            <!-- Hiển thị User ID, Tên và Tên chủ sở hữu -->
             <div class="text-right">
                 <div class="text-xs text-gray-400">
                     User ID: <span id="userIdDisplay" class="font-mono bg-gray-700 px-2 py-1 rounded">Đang tải...</span>
                 </div>
-                <!-- THÊM TÊN -->
+                <!-- Vùng đặt tên hiển thị -->
+                <div class="mt-2 flex justify-end gap-2 items-center">
+                    <input type="text" id="displayNameInput" placeholder="Đặt tên hiển thị..."
+                        class="w-40 bg-gray-700 border border-gray-600 rounded-md shadow-sm px-2 py-1 text-xs text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <button id="saveNameBtn"
+                        class="bg-blue-600 text-white font-semibold py-1 px-3 rounded-md shadow-md text-xs hover:bg-blue-700 transition duration-200">
+                        Lưu Tên
+                    </button>
+                </div>
+                <!-- Tên chủ sở hữu -->
                 <div class="text-xs text-gray-500 mt-1">
                     Created by Thế Nguyên
                 </div>
@@ -110,7 +119,7 @@
                 </div>
 
                 <!-- Form Thêm Thẻ -->
-                <form id="addCardForm" class="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <form id="addCardForm" class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="cardRoll" class="block text-sm font-medium text-gray-300 mb-1">Mã Thẻ (Roll)</label>
                         <input type="text" id="cardRoll" name="cardRoll"
@@ -124,14 +133,31 @@
                             class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="A Cam" required>
                     </div>
+                    <!-- Thêm ô Ghi chú (Notes) -->
+                    <div class="sm:col-span-2">
+                        <label for="cardNotes" class="block text-sm font-medium text-gray-300 mb-1">Ghi chú (Không bắt
+                            buộc)</label>
+                        <textarea id="cardNotes" name="cardNotes" rows="2"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Ví dụ: 256GB, Quay High-speed, Cảnh test..."></textarea>
+                    </div>
                     <button type="submit"
-                        class="sm:self-end bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200">
+                        class="sm:col-span-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200">
                         Thêm Thẻ
                     </button>
                 </form>
 
+
                 <!-- Danh sách Thẻ -->
                 <div class="p-5 space-y-4">
+                    <!-- Thanh Tìm kiếm Thẻ -->
+                    <div class="relative">
+                        <input type="text" id="searchCardInput"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Tìm kiếm thẻ (theo Mã, Nguồn, Ghi chú...)">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+
                     <h3 class="text-lg font-semibold text-gray-200 mb-2">Danh sách thẻ</h3>
                     <div id="cardList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                         <!-- Thẻ sẽ được thêm vào đây bằng JS -->
@@ -151,7 +177,7 @@
                     </div>
 
                     <!-- Form Thêm Thiết bị -->
-                    <form id="addEquipmentForm" class="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <form id="addEquipmentForm" class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="equipmentName" class="block text-sm font-medium text-gray-300 mb-1">Tên Thiết
                                 bị</label>
@@ -166,14 +192,31 @@
                                 class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Máy quay" required>
                         </div>
+                        <!-- Thêm ô Ghi chú (Notes) -->
+                        <div class="sm:col-span-2">
+                            <label for="equipmentNotes" class="block text-sm font-medium text-gray-300 mb-1">Ghi chú (Số
+                                Seri, Tình trạng...)</label>
+                            <textarea id="equipmentNotes" name="equipmentNotes" rows="2"
+                                class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Ví dụ: S/N: 12345, Lens bị kẹt focus nhẹ..."></textarea>
+                        </div>
                         <button type="submit"
-                            class="sm:self-end bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition duration-200">
+                            class="sm:col-span-2 bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition duration-200">
                             Thêm Thiết bị
                         </button>
                     </form>
 
+
                     <!-- Danh sách Thiết bị -->
                     <div class="p-5 space-y-4">
+                        <!-- Thanh Tìm kiếm Thiết bị -->
+                        <div class="relative">
+                            <input type="text" id="searchEquipmentInput"
+                                class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Tìm kiếm thiết bị (theo Tên, Loại, Ghi chú...)">
+                            <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+
                         <h3 class="text-lg font-semibold text-gray-200 mb-2">Danh sách thiết bị</h3>
                         <div id="equipmentList" class="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                             <!-- Thiết bị sẽ được thêm vào đây bằng JS -->
@@ -221,10 +264,19 @@
     </div>
 
     <!-- Thông báo lỗi -->
-    <div id="errorNotification" class="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-lg shadow-lg z-50">
+    <div id="errorNotification"
+        class="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-lg shadow-lg z-50 transition-transform duration-300 ease-out translate-y-full opacity-0">
         <strong class="font-bold">Lỗi!</strong>
         <span class="block sm:inline" id="errorMessage">Đã xảy ra lỗi.</span>
     </div>
+
+    <!-- Thông báo thành công (cho việc lưu tên) -->
+    <div id="successNotification"
+        class="fixed bottom-4 left-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 transition-transform duration-300 ease-out translate-y-full opacity-0">
+        <strong class="font-bold">Thành công!</strong>
+        <span class="block sm:inline" id="successMessage">Đã lưu tên thành công.</span>
+    </div>
+
 
     <!-- Firebase SDKs -->
     <script type="module">
@@ -233,7 +285,6 @@
         import {
             getAuth,
             signInAnonymously,
-            signInWithCustomToken,
             onAuthStateChanged,
             setPersistence,
             browserLocalPersistence
@@ -258,14 +309,20 @@
 
         // --- BIẾN TOÀN CỤC ---
         let db, auth, userId, appId;
+        let userDisplayName = 'Người dùng ẩn danh'; // Tên mặc định
         let cardListContainer = document.getElementById('cardList');
         let equipmentListContainer = document.getElementById('equipmentList');
         let historyLogListContainer = document.getElementById('historyLogList');
+
+        // Biến lưu trữ toàn bộ dữ liệu (để tìm kiếm)
+        let allCards = [];
+        let allEquipment = [];
 
         // Định nghĩa các bộ sưu tập
         let cardCollectionRef;
         let equipmentCollectionRef;
         let historyCollectionRef;
+        let userProfilesCollectionRef; // Collection để lưu tên người dùng
 
         // Trạng thái modal
         let deleteCallback = null;
@@ -299,7 +356,6 @@
                 setLogLevel('Debug');
 
                 // --- CẤU HÌNH FIREBASE CỦA BẠN ---
-                // DỮ LIỆU CẤU HÌNH TỪ DỰ ÁN CỦA BẠN ĐÃ ĐƯỢC DÁN VÀO ĐÂY
                 const firebaseConfig = {
                     apiKey: "AIzaSyDwtPQXujh8xZPu9XDP410_dbS9U4a6Gow",
                     authDomain: "quanlydoanphim.firebaseapp.com",
@@ -311,12 +367,11 @@
                 };
                 // ------------------------------------
 
-                // Sử dụng appId từ config của bạn, hoặc 'default-app-id' nếu chưa có
                 appId = firebaseConfig.appId || 'default-app-id';
 
                 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
                     const errorMsg = "Lỗi: Cấu hình Firebase chưa được thiết lập. " +
-                                     "Vui lòng tạo dự án Firebase, sao chép cấu hình và dán vào file HTML.";
+                        "Vui lòng tạo dự án Firebase, sao chép cấu hình và dán vào file HTML.";
                     showError(errorMsg);
                     console.error(errorMsg);
                     return;
@@ -338,13 +393,15 @@
                         document.getElementById('userIdDisplay').textContent = userId;
                         // Khi đã có userId, khởi tạo các đường dẫn collection
                         setupCollections();
+                        // Tải tên hiển thị của người dùng
+                        await loadUserProfile();
                         // Tải dữ liệu ban đầu
                         attachListeners();
                     } else {
                         console.log("Người dùng chưa đăng nhập, đang thử đăng nhập...");
                         userId = null;
                         document.getElementById('userIdDisplay').textContent = "Đang kết nối...";
-                        // Thử đăng nhập (bằng token hoặc ẩn danh)
+                        // Thử đăng nhập (ẩn danh)
                         await attemptSignIn();
                     }
                 });
@@ -359,25 +416,19 @@
         // Hàm thử đăng nhập
         async function attemptSignIn() {
             try {
-                // KHI SỬ DỤNG CONFIG CỦA RIÊNG BẠN (TRÊN GITHUB, V.V.),
-                // BẠN CHỈ CÓ THỂ ĐĂNG NHẬP ẨN DANH.
-                // Logic `signInWithCustomToken` đã bị xóa vì nó chỉ dành cho môi trường Canvas.
                 console.log("Đang thử đăng nhập ẩn danh...");
                 await signInAnonymously(auth);
-
                 // onAuthStateChanged sẽ tự động xử lý phần còn lại
             } catch (error) {
                 console.error("Lỗi khi đăng nhập (ẩn danh):", error);
-                // Lỗi "auth/operation-not-allowed" thường có nghĩa là bạn chưa bật "Anonymous"
                 if (error.code === 'auth/operation-not-allowed') {
-                     showError("Lỗi đăng nhập: 'Anonymous Sign-in' (Đăng nhập ẩn danh) CHƯA ĐƯỢC BẬT trong Firebase project của bạn.");
+                    showError("Lỗi đăng nhập: 'Anonymous Sign-in' (Đăng nhập ẩn danh) CHƯA ĐƯỢC BẬT trong Firebase project của bạn.");
                 } else {
-                     showError("Lỗi đăng nhập: " + error.message);
+                    showError("Lỗi đăng nhập: " + error.message);
                 }
                 hideLoading();
             }
         }
-
 
         // --- HÀM THIẾT LẬP COLLECTIONS ---
         function setupCollections() {
@@ -390,8 +441,63 @@
             cardCollectionRef = collection(db, `${basePath}/dit_cards`);
             equipmentCollectionRef = collection(db, `${basePath}/equipment`);
             historyCollectionRef = collection(db, `${basePath}/history_log`);
+            // Collection mới để lưu hồ sơ người dùng (tên)
+            userProfilesCollectionRef = collection(db, `${basePath}/user_profiles`);
             console.log("Đã thiết lập đường dẫn collections:", basePath);
         }
+
+        // --- HÀM TẢI VÀ LƯU TÊN NGƯỜI DÙNG ---
+
+        // Tải hồ sơ người dùng (tên)
+        async function loadUserProfile() {
+            if (!userId) return;
+            try {
+                const userProfileRef = doc(userProfilesCollectionRef, userId);
+                const docSnap = await getDoc(userProfileRef);
+
+                if (docSnap.exists()) {
+                    userDisplayName = docSnap.data().displayName;
+                    document.getElementById('displayNameInput').value = userDisplayName;
+                    console.log("Đã tải tên hiển thị:", userDisplayName);
+                } else {
+                    console.log("Chưa có hồ sơ người dùng, sử dụng tên mặc định.");
+                    userDisplayName = `User (${userId.substring(0, 4)})`; // Tên tạm
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải hồ sơ người dùng:", error);
+                showError("Lỗi tải tên: " + error.message);
+            }
+        }
+
+        // Lưu tên hiển thị
+        async function handleSaveName(e) {
+            e.preventDefault();
+            const newName = document.getElementById('displayNameInput').value.trim();
+            if (!newName) {
+                showError("Tên không được để trống.");
+                return;
+            }
+            if (!userId) {
+                showError("Chưa kết nối được với người dùng.");
+                return;
+            }
+
+            try {
+                const userProfileRef = doc(userProfilesCollectionRef, userId);
+                await setDoc(userProfileRef, {
+                    displayName: newName
+                }, { merge: true }); // Dùng setDoc với merge để tạo mới hoặc cập nhật
+
+                userDisplayName = newName; // Cập nhật tên ở local
+                showSuccess("Đã lưu tên thành công!");
+                console.log("Đã lưu tên:", newName);
+
+            } catch (error) {
+                console.error("Lỗi khi lưu tên:", error);
+                showError("Lỗi lưu tên: " + error.message);
+            }
+        }
+
 
         // --- HÀM GẮN LISTENER ---
         function attachListeners() {
@@ -405,14 +511,16 @@
 
             // Lắng nghe thay đổi thẻ
             onSnapshot(cardCollectionRef, (snapshot) => {
-                let cards = [];
+                allCards = []; // Cập nhật mảng global
                 snapshot.forEach(doc => {
-                    cards.push({ id: doc.id, ...doc.data() });
+                    allCards.push({ id: doc.id, ...doc.data() });
                 });
                 // Sắp xếp theo thời gian tạo (mới nhất lên đầu)
-                cards.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                renderCardList(cards);
-                console.log("Đã cập nhật danh sách thẻ:", cards.length);
+                allCards.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+                renderAndFilterCards(); // Gọi hàm filter/render mới
+
+                console.log("Đã cập nhật danh sách thẻ:", allCards.length);
                 hideLoading(); // Ẩn loading sau khi dữ liệu đầu tiên về
             }, (error) => {
                 console.error("Lỗi khi tải danh sách thẻ:", error);
@@ -422,14 +530,16 @@
 
             // Lắng nghe thay đổi thiết bị
             onSnapshot(equipmentCollectionRef, (snapshot) => {
-                let equipment = [];
+                allEquipment = []; // Cập nhật mảng global
                 snapshot.forEach(doc => {
-                    equipment.push({ id: doc.id, ...doc.data() });
+                    allEquipment.push({ id: doc.id, ...doc.data() });
                 });
                 // Sắp xếp theo tên
-                equipment.sort((a, b) => a.name.localeCompare(b.name));
-                renderEquipmentList(equipment);
-                console.log("Đã cập nhật danh sách thiết bị:", equipment.length);
+                allEquipment.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+                renderAndFilterEquipment(); // Gọi hàm filter/render mới
+
+                console.log("Đã cập nhật danh sách thiết bị:", allEquipment.length);
             }, (error) => {
                 console.error("Lỗi khi tải danh sách thiết bị:", error);
                 showError("Lỗi tải thiết bị: " + error.message);
@@ -453,13 +563,33 @@
 
         // --- HÀM HIỂN THỊ (RENDER) ---
 
+        // Hàm Lọc và Render Thẻ
+        function renderAndFilterCards() {
+            const searchTerm = document.getElementById('searchCardInput').value.toLowerCase();
+
+            const filteredCards = allCards.filter(card => {
+                return (
+                    (card.roll || '').toLowerCase().includes(searchTerm) ||
+                    (card.source || '').toLowerCase().includes(searchTerm) ||
+                    (card.notes && card.notes.toLowerCase().includes(searchTerm))
+                );
+            });
+
+            renderCardList(filteredCards); // Gọi hàm render với dữ liệu đã lọc
+        }
+
         // Hiển thị danh sách thẻ
         function renderCardList(cards) {
             cardListContainer.innerHTML = ''; // Xóa list cũ
             if (cards.length === 0) {
-                cardListContainer.innerHTML = '<p class="text-gray-400 italic">Chưa có thẻ nào.</p>';
+                if (document.getElementById('searchCardInput').value) {
+                    cardListContainer.innerHTML = '<p class="text-gray-400 italic">Không tìm thấy thẻ nào.</p>';
+                } else {
+                    cardListContainer.innerHTML = '<p class="text-gray-400 italic">Chưa có thẻ nào.</p>';
+                }
                 return;
             }
+
             cards.forEach(card => {
                 const statusInfo = CARD_STATUSES[card.status] || CARD_STATUSES.EMPTY;
                 const nextStatusKey = statusInfo.next;
@@ -469,14 +599,20 @@
                 cardEl.className = `p-4 rounded-lg shadow-md border-l-4 ${statusInfo.color.replace('bg-', 'border-')} ${statusInfo.color} bg-opacity-20`;
                 cardEl.innerHTML = `
             <div class="flex justify-between items-start">
-                <div>
+                <div class="flex-1">
                     <h4 class="text-lg font-bold text-white">${card.roll}</h4>
                     <p class="text-sm text-gray-300">${card.source}</p>
                     <p class="text-xs text-gray-400 mt-1">
                         Trạng thái: <span class="font-semibold ${statusInfo.color} px-2 py-0.5 rounded">${statusInfo.text}</span>
                     </p>
+                    <!-- Hiển thị Ghi chú -->
+                    ${card.notes ? `
+                        <p class="text-sm text-gray-300 mt-2 bg-gray-700 p-2 rounded-md whitespace-pre-wrap font-mono text-xs">
+                            <i class="ph ph-note mr-1"></i>${card.notes}
+                        </p>
+                    ` : ''}
                 </div>
-                <div class="flex flex-col items-end gap-2">
+                <div class="flex flex-col items-end gap-2 flex-shrink-0 ml-4">
                     ${nextStatusInfo ? `
                         <button data-id="${card.id}" data-current-status="${card.status}" data-next-status="${nextStatusKey}"
                                 class="status-btn text-sm font-medium ${nextStatusInfo.color} text-white px-3 py-1 rounded-md shadow-sm hover:opacity-80">
@@ -507,11 +643,30 @@
             });
         }
 
+        // Hàm Lọc và Render Thiết bị
+        function renderAndFilterEquipment() {
+            const searchTerm = document.getElementById('searchEquipmentInput').value.toLowerCase();
+
+            const filteredEquipment = allEquipment.filter(item => {
+                return (
+                    (item.name || '').toLowerCase().includes(searchTerm) ||
+                    (item.category || '').toLowerCase().includes(searchTerm) ||
+                    (item.notes && item.notes.toLowerCase().includes(searchTerm))
+                );
+            });
+
+            renderEquipmentList(filteredEquipment); // Gọi hàm render với dữ liệu đã lọc
+        }
+
         // Hiển thị danh sách thiết bị
         function renderEquipmentList(equipment) {
             equipmentListContainer.innerHTML = ''; // Xóa list cũ
             if (equipment.length === 0) {
-                equipmentListContainer.innerHTML = '<p class="text-gray-400 italic">Chưa có thiết bị nào.</p>';
+                if (document.getElementById('searchEquipmentInput').value) {
+                    equipmentListContainer.innerHTML = '<p class="text-gray-400 italic">Không tìm thấy thiết bị nào.</p>';
+                } else {
+                    equipmentListContainer.innerHTML = '<p class="text-gray-400 italic">Chưa có thiết bị nào.</p>';
+                }
                 return;
             }
             equipment.forEach(item => {
@@ -524,15 +679,21 @@
                 }
 
                 const itemEl = document.createElement('div');
-                itemEl.className = 'p-3 bg-gray-700 rounded-lg flex justify-between items-center gap-4';
+                itemEl.className = 'p-3 bg-gray-700 rounded-lg flex justify-between items-start gap-4';
                 itemEl.innerHTML = `
-            <div>
+            <div class="flex-1">
                 <h4 class="text-md font-semibold text-white">${item.name}</h4>
                 <p class="text-sm text-gray-400">${item.category}</p>
+                <!-- Hiển thị Ghi chú -->
+                ${item.notes ? `
+                    <p class="text-sm text-gray-300 mt-2 bg-gray-600 p-2 rounded-md whitespace-pre-wrap font-mono text-xs">
+                        <i class="ph ph-note mr-1"></i>${item.notes}
+                    </p>
+                ` : ''}
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-col items-end gap-3 flex-shrink-0">
                 <select data-id="${item.id}" data-current-status="${item.status}"
-                    class="equipment-status-select bg-gray-600 border border-gray-500 text-white text-sm rounded-md shadow-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusInfo.color}">
+                    class="equipment-status-select bg-gray-600 border border-gray-500 text-white text-sm rounded-md shadow-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusInfo.color} w-full">
                     ${optionsHtml}
                 </select>
                 <button data-id="${item.id}" class="delete-equipment-btn text-gray-400 hover:text-red-500 transition-colors">
@@ -566,8 +727,11 @@
                 const logEl = document.createElement('div');
                 logEl.className = 'p-2 border-b border-gray-700';
                 const timestamp = log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString('vi-VN') : 'Vừa xong';
+                // Sử dụng log.userName (tên đã lưu) thay vì log.userId
+                const actor = log.userName || `User (${(log.userId || '...').substring(0, 4)})`;
+
                 logEl.innerHTML = `
-            <p class="text-sm text-gray-200">${log.message}</p>
+            <p class="text-sm text-gray-200"><span class="font-semibold text-blue-300">${actor}</span> ${log.message}</p>
             <p class="text-xs text-gray-400">${timestamp}</p>
         `;
                 historyLogListContainer.appendChild(logEl);
@@ -583,7 +747,8 @@
                 await addDoc(historyCollectionRef, {
                     message: message,
                     timestamp: serverTimestamp(),
-                    userId: userId // Ghi lại ai đã thực hiện
+                    userId: userId,
+                    userName: userDisplayName // <-- Thêm tên hiển thị vào log
                 });
             } catch (error) {
                 console.error("Lỗi khi ghi lịch sử:", error);
@@ -596,21 +761,25 @@
             e.preventDefault();
             const roll = document.getElementById('cardRoll').value;
             const source = document.getElementById('cardSource').value;
+            const notes = document.getElementById('cardNotes').value; // Thêm notes
             if (!roll || !source) {
                 showError("Vui lòng nhập đầy đủ Mã Thẻ và Máy quay.");
                 return;
             }
 
             try {
-                await addDoc(cardCollectionRef, {
+                const newCard = {
                     roll: roll,
                     source: source,
+                    notes: notes || "", // Lưu notes
                     status: CARD_STATUS_ORDER[0], // Bắt đầu từ 'EMPTY'
                     createdAt: serverTimestamp(),
-                    userId: userId
-                });
-                // Ghi lịch sử
-                await logHistory(`Thẻ ${roll} (${source}) đã được thêm bởi ${userId}.`);
+                    userId: userId,
+                    userName: userDisplayName // Lưu lại ai đã tạo
+                };
+                await addDoc(cardCollectionRef, newCard);
+                // Ghi lịch sử (message giờ chỉ cần hành động)
+                await logHistory(`đã thêm thẻ ${roll} (${source}).`);
                 // Reset form
                 e.target.reset();
             } catch (error) {
@@ -636,7 +805,7 @@
                 // Ghi lịch sử
                 const cardDoc = await getDoc(cardRef);
                 const cardRoll = cardDoc.data()?.roll || 'Thẻ không rõ';
-                await logHistory(`Thẻ ${cardRoll} đã chuyển từ '${CARD_STATUSES[currentStatus].text}' sang '${CARD_STATUSES[nextStatus].text}' (thực hiện bởi ${userId}).`);
+                await logHistory(`đã chuyển thẻ ${cardRoll} từ '${CARD_STATUSES[currentStatus].text}' sang '${CARD_STATUSES[nextStatus].text}'.`);
 
             } catch (error) {
                 console.error("Lỗi khi cập nhật trạng thái thẻ:", error);
@@ -654,7 +823,7 @@
                     const cardRoll = cardDoc.data()?.roll || 'Thẻ không rõ';
 
                     await deleteDoc(cardRef);
-                    await logHistory(`Thẻ ${cardRoll} đã bị xóa bởi ${userId}.`);
+                    await logHistory(`đã xóa thẻ ${cardRoll}.`);
                     hideDeleteConfirm();
                 } catch (error) {
                     console.error("Lỗi khi xóa thẻ:", error);
@@ -669,6 +838,7 @@
             e.preventDefault();
             const name = document.getElementById('equipmentName').value;
             const category = document.getElementById('equipmentCategory').value;
+            const notes = document.getElementById('equipmentNotes').value; // Thêm notes
             if (!name || !category) {
                 showError("Vui lòng nhập Tên và Loại thiết bị.");
                 return;
@@ -678,12 +848,14 @@
                 await addDoc(equipmentCollectionRef, {
                     name: name,
                     category: category,
+                    notes: notes || "", // Lưu notes
                     status: 'READY', // Mặc định là 'Sẵn sàng'
                     createdAt: serverTimestamp(),
-                    userId: userId
+                    userId: userId,
+                    userName: userDisplayName // Lưu lại ai đã tạo
                 });
                 // Ghi lịch sử
-                await logHistory(`Thiết bị ${name} (${category}) đã được thêm bởi ${userId}.`);
+                await logHistory(`đã thêm thiết bị ${name} (${category}).`);
                 // Reset form
                 e.target.reset();
             } catch (error) {
@@ -712,7 +884,7 @@
                 // Ghi lịch sử
                 const eqDoc = await getDoc(equipmentRef);
                 const eqName = eqDoc.data()?.name || 'Thiết bị không rõ';
-                await logHistory(`Thiết bị ${eqName} đã chuyển từ '${EQUIPMENT_STATUSES[currentStatus].text}' sang '${EQUIPMENT_STATUSES[newStatus].text}' (thực hiện bởi ${userId}).`);
+                await logHistory(`đã chuyển trạng thái thiết bị ${eqName} từ '${EQUIPMENT_STATUSES[currentStatus].text}' sang '${EQUIPMENT_STATUSES[newStatus].text}'.`);
 
                 // Cập nhật màu sắc của select
                 const statusInfo = EQUIPMENT_STATUSES[newStatus] || EQUIPMENT_STATUSES.READY;
@@ -739,7 +911,7 @@
                     const eqName = eqDoc.data()?.name || 'Thiết bị không rõ';
 
                     await deleteDoc(equipmentRef);
-                    await logHistory(`Thiết bị ${eqName} đã bị xóa bởi ${userId}.`);
+                    await logHistory(`đã xóa thiết bị ${eqName}.`);
                     hideDeleteConfirm();
                 } catch (error) {
                     console.error("Lỗi khi xóa thiết bị:", error);
@@ -775,6 +947,17 @@
             setTimeout(() => {
                 errorEl.classList.remove('show');
             }, 5000);
+        }
+
+        // Hiển thị thông báo thành công
+        function showSuccess(message) {
+            const successEl = document.getElementById('successNotification');
+            document.getElementById('successMessage').textContent = message;
+            successEl.classList.remove('translate-y-full', 'opacity-0');
+            // Tự động ẩn sau 3 giây
+            setTimeout(() => {
+                successEl.classList.add('translate-y-full', 'opacity-0');
+            }, 3000);
         }
 
         // Hiển thị/ẩn Modal xác nhận
@@ -819,6 +1002,12 @@
         // Nút Hủy và Xác nhận Xóa trên Modal
         document.getElementById('cancelDeleteBtn').addEventListener('click', hideDeleteConfirm);
         document.getElementById('confirmDeleteBtn').addEventListener('click', handleConfirmDelete);
+        // Nút Lưu Tên
+        document.getElementById('saveNameBtn').addEventListener('click', handleSaveName);
+
+        // Thanh Tìm kiếm
+        document.getElementById('searchCardInput').addEventListener('input', renderAndFilterCards);
+        document.getElementById('searchEquipmentInput').addEventListener('input', renderAndFilterEquipment);
 
         // --- KHỞI CHẠY ỨNG DỤNG ---
         // Bắt đầu quá trình khởi tạo Firebase
