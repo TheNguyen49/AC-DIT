@@ -109,63 +109,7 @@
     <main id="mainContent" class="container mx-auto max-w-7xl p-4 md:p-6 flex-grow hidden">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            <!-- Cột 1: Quản lý Thẻ nhớ (DIT Log) -->
-            <div class="bg-gray-800 shadow-lg rounded-lg overflow-hidden">
-                <div class="p-5 border-b border-gray-700">
-                    <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-                        <i class="ph-bold ph-hard-drives"></i>
-                        Nhật ký Thẻ nhớ (DIT Log)
-                    </h2>
-                </div>
-
-                <!-- Form Thêm Thẻ -->
-                <form id="addCardForm" class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label for="cardRoll" class="block text-sm font-medium text-gray-300 mb-1">Mã Thẻ (Roll)</label>
-                        <input type="text" id="cardRoll" name="cardRoll"
-                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="A001C001" required>
-                    </div>
-                    <div>
-                        <label for="cardSource" class="block text-sm font-medium text-gray-300 mb-1">Máy quay
-                            (Source)</label>
-                        <input type="text" id="cardSource" name="cardSource"
-                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="A Cam" required>
-                    </div>
-                    <!-- Thêm ô Ghi chú (Notes) -->
-                    <div class="sm:col-span-2">
-                        <label for="cardNotes" class="block text-sm font-medium text-gray-300 mb-1">Ghi chú (Không bắt
-                            buộc)</label>
-                        <textarea id="cardNotes" name="cardNotes" rows="2"
-                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Ví dụ: 256GB, Quay High-speed, Cảnh test..."></textarea>
-                    </div>
-                    <button type="submit"
-                        class="sm:col-span-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200">
-                        Thêm Thẻ
-                    </button>
-                </form>
-
-
-                <!-- Danh sách Thẻ -->
-                <div class="p-5 space-y-4">
-                    <!-- Thanh Tìm kiếm Thẻ -->
-                    <div class="relative">
-                        <input type="text" id="searchCardInput"
-                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Tìm kiếm thẻ (theo Mã, Nguồn, Ghi chú...)">
-                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    </div>
-
-                    <h3 class="text-lg font-semibold text-gray-200 mb-2">Danh sách thẻ</h3>
-                    <div id="cardList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                        <!-- Thẻ sẽ được thêm vào đây bằng JS -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cột 2: Quản lý Thiết bị & Lịch sử -->
+            <!-- Cột 1: Quản lý Thiết bị & Lịch sử (ĐÃ DI CHUYỂN LÊN TRÊN) -->
             <div class="space-y-6">
                 <!-- Quản lý Thiết bị -->
                 <div class="bg-gray-800 shadow-lg rounded-lg overflow-hidden">
@@ -224,7 +168,7 @@
                     </div>
                 </div>
 
-                <!-- Lịch sử Hoạt động -->
+                <!-- Lịch sử Hoạt động (ĐÃ CẬP NHẬT) -->
                 <div class="bg-gray-800 shadow-lg rounded-lg overflow-hidden">
                     <div class="p-5 border-b border-gray-700">
                         <h2 class="text-xl font-semibold text-white flex items-center gap-2">
@@ -232,9 +176,77 @@
                             Lịch sử Hoạt động
                         </h2>
                     </div>
+                    <!-- BỘ LỌC NGÀY (MỚI) -->
+                    <div class="p-5 flex flex-wrap gap-4 items-center border-b border-gray-700">
+                        <label for="historyDateFilter" class="text-sm font-medium text-gray-300 flex-shrink-0">Xem theo
+                            ngày:</label>
+                        <input type="date" id="historyDateFilter"
+                            class="flex-grow bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            style="color-scheme: dark;">
+                        <button id="resetHistoryFilter"
+                            class="bg-gray-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-gray-500 transition duration-200">
+                            Xem tất cả
+                        </button>
+                    </div>
                     <div id="historyLogList" class="p-5 space-y-2 max-h-[300px] overflow-y-auto pr-2">
                         <!-- Log lịch sử sẽ được thêm vào đây -->
                         <p class="text-gray-400 italic">Chưa có hoạt động nào.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột 2: Quản lý Thẻ nhớ (DIT Log) -->
+            <div class="bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+                <div class="p-5 border-b border-gray-700">
+                    <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+                        <i class="ph-bold ph-hard-drives"></i>
+                        Nhật ký Thẻ nhớ (DIT Log)
+                    </h2>
+                </div>
+
+                <!-- Form Thêm Thẻ -->
+                <form id="addCardForm" class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="cardRoll" class="block text-sm font-medium text-gray-300 mb-1">Mã Thẻ (Roll)</label>
+                        <input type="text" id="cardRoll" name="cardRoll"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="A001C001" required>
+                    </div>
+                    <div>
+                        <label for="cardSource" class="block text-sm font-medium text-gray-300 mb-1">Máy quay
+                            (Source)</label>
+                        <input type="text" id="cardSource" name="cardSource"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="A Cam" required>
+                    </div>
+                    <!-- Thêm ô Ghi chú (Notes) -->
+                    <div class="sm:col-span-2">
+                        <label for="cardNotes" class="block text-sm font-medium text-gray-300 mb-1">Ghi chú (Không bắt
+                            buộc)</label>
+                        <textarea id="cardNotes" name="cardNotes" rows="2"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Ví dụ: 256GB, Quay High-speed, Cảnh test..."></textarea>
+                    </div>
+                    <button type="submit"
+                        class="sm:col-span-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200">
+                        Thêm Thẻ
+                    </button>
+                </form>
+
+
+                <!-- Danh sách Thẻ -->
+                <div class="p-5 space-y-4">
+                    <!-- Thanh Tìm kiếm Thẻ -->
+                    <div class="relative">
+                        <input type="text" id="searchCardInput"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Tìm kiếm thẻ (theo Mã, Nguồn, Ghi chú...)">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+
+                    <h3 class="text-lg font-semibold text-gray-200 mb-2">Danh sách thẻ</h3>
+                    <div id="cardList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                        <!-- Thẻ sẽ được thêm vào đây bằng JS -->
                     </div>
                 </div>
             </div>
@@ -314,9 +326,10 @@
         let equipmentListContainer = document.getElementById('equipmentList');
         let historyLogListContainer = document.getElementById('historyLogList');
 
-        // Biến lưu trữ toàn bộ dữ liệu (để tìm kiếm)
+        // Biến lưu trữ toàn bộ dữ liệu (để tìm kiếm và lọc)
         let allCards = [];
         let allEquipment = [];
+        let allHistoryLogs = []; // MỚI: Biến lưu toàn bộ lịch sử
 
         // Định nghĩa các bộ sưu tập
         let cardCollectionRef;
@@ -545,16 +558,18 @@
                 showError("Lỗi tải thiết bị: " + error.message);
             });
 
-            // Lắng nghe thay đổi lịch sử
+            // Lắng nghe thay đổi lịch sử (ĐÃ CẬP NHẬT)
             onSnapshot(historyCollectionRef, (snapshot) => {
-                let logs = [];
+                allHistoryLogs = []; // Cập nhật mảng global
                 snapshot.forEach(doc => {
-                    logs.push({ id: doc.id, ...doc.data() });
+                    allHistoryLogs.push({ id: doc.id, ...doc.data() });
                 });
                 // Sắp xếp theo thời gian (mới nhất lên đầu)
-                logs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                renderHistoryLog(logs);
-                console.log("Đã cập nhật lịch sử:", logs.length);
+                allHistoryLogs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                renderAndFilterHistoryLog(); // Gọi hàm filter/render mới
+
+                console.log("Đã cập nhật lịch sử:", allHistoryLogs.length);
             }, (error) => {
                 console.error("Lỗi khi tải lịch sử:", error);
                 showError("Lỗi tải lịch sử: " + error.message);
@@ -716,18 +731,90 @@
             });
         }
 
-        // Hiển thị lịch sử
+        // MỚI: Hàm lọc và render Lịch sử
+        function renderAndFilterHistoryLog() {
+            const selectedDateStr = document.getElementById('historyDateFilter').value;
+
+            let filteredLogs = allHistoryLogs;
+
+            if (selectedDateStr) { // Nếu có ngày được chọn
+                filteredLogs = allHistoryLogs.filter(log => {
+                    if (!log.timestamp || !log.timestamp.seconds) return false;
+
+                    const logDate = new Date(log.timestamp.seconds * 1000);
+                    // Chuyển đổi sang YYYY-MM-DD ở múi giờ địa phương
+                    const logDateStr = logDate.getFullYear() + '-' +
+                        ('0' + (logDate.getMonth() + 1)).slice(-2) + '-' +
+                        ('0' + logDate.getDate()).slice(-2);
+
+                    return logDateStr === selectedDateStr;
+                });
+            }
+
+            renderHistoryLog(filteredLogs); // Gọi hàm render với dữ liệu đã lọc (hoặc toàn bộ)
+        }
+
+        // MỚI: Hàm helper định dạng ngày
+        function formatHistoryDate(date) {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+            if (date.toDateString() === today.toDateString()) {
+                return `Hôm nay (${dateStr})`;
+            }
+            if (date.toDateString() === yesterday.toDateString()) {
+                return `Hôm qua (${dateStr})`;
+            }
+            return `Ngày ${dateStr}`;
+        }
+
+        // Hiển thị lịch sử (ĐÃ CẬP NHẬT để phân nhóm)
         function renderHistoryLog(logs) {
             historyLogListContainer.innerHTML = ''; // Xóa list cũ
+
             if (logs.length === 0) {
-                historyLogListContainer.innerHTML = '<p class="text-gray-400 italic">Chưa có hoạt động nào.</p>';
+                if (document.getElementById('historyDateFilter').value) {
+                    historyLogListContainer.innerHTML = '<p class="text-gray-400 italic">Không tìm thấy hoạt động nào cho ngày này.</p>';
+                } else {
+                    historyLogListContainer.innerHTML = '<p class="text-gray-400 italic">Chưa có hoạt động nào.</p>';
+                }
                 return;
             }
+
+            let currentDayStr = "";
+            // Biến này kiểm tra xem có đang lọc theo ngày không
+            const isFilteringByDate = !!document.getElementById('historyDateFilter').value;
+
             logs.forEach(log => {
+                if (!log.timestamp || !log.timestamp.seconds) {
+                    return; // Bỏ qua log không có timestamp
+                }
+
+                const logDate = new Date(log.timestamp.seconds * 1000);
+
+                // Chỉ hiển thị nhóm ngày nếu KHÔNG lọc (xem tất cả)
+                if (!isFilteringByDate) {
+                    const logDayStr = formatHistoryDate(logDate); // Dùng hàm helper
+
+                    if (logDayStr !== currentDayStr) {
+                        currentDayStr = logDayStr;
+                        const dateHeader = document.createElement('h4');
+                        // Thêm class first:.. để không bị gạch ngang/margin ở header đầu tiên
+                        dateHeader.className = "text-md font-semibold text-blue-300 mt-4 pt-2 border-t border-gray-700 first:mt-0 first:pt-0 first:border-t-0";
+                        dateHeader.textContent = currentDayStr;
+                        historyLogListContainer.appendChild(dateHeader);
+                    }
+                }
+
                 const logEl = document.createElement('div');
-                logEl.className = 'p-2 border-b border-gray-700';
-                const timestamp = log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString('vi-VN') : 'Vừa xong';
-                // Sử dụng log.userName (tên đã lưu) thay vì log.userId
+                logEl.className = 'p-2 border-b border-gray-700 last:border-b-0';
+
+                // Luôn hiển thị giờ:phút:giây
+                const timestamp = logDate.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
                 const actor = log.userName || `User (${(log.userId || '...').substring(0, 4)})`;
 
                 logEl.innerHTML = `
@@ -1008,6 +1095,13 @@
         // Thanh Tìm kiếm
         document.getElementById('searchCardInput').addEventListener('input', renderAndFilterCards);
         document.getElementById('searchEquipmentInput').addEventListener('input', renderAndFilterEquipment);
+
+        // MỚI: Lịch sử Hoạt động - Bộ lọc ngày
+        document.getElementById('historyDateFilter').addEventListener('change', renderAndFilterHistoryLog);
+        document.getElementById('resetHistoryFilter').addEventListener('click', () => {
+            document.getElementById('historyDateFilter').value = ""; // Xóa giá trị date picker
+            renderAndFilterHistoryLog(); // Render lại
+        });
 
         // --- KHỞI CHẠY ỨNG DỤNG ---
         // Bắt đầu quá trình khởi tạo Firebase
