@@ -9,6 +9,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tải Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+
+    <!-- MỚI: Tải pdfmake (cho xuất PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.js"></script>
+
     <!-- Cấu hình Tailwind cho Dark Mode -->
     <script>
         tailwind.config = {
@@ -186,6 +191,12 @@
                         <button id="resetHistoryFilter"
                             class="bg-gray-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-gray-500 transition duration-200">
                             Xem tất cả
+                        </button>
+                        <!-- MỚI: Nút Xuất PDF -->
+                        <button id="exportHistoryPdfBtn"
+                            class="bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-green-700 transition duration-200 flex items-center gap-1">
+                            <i class="ph ph-file-pdf"></i>
+                            Xuất PDF
                         </button>
                     </div>
                     <div id="historyLogList" class="p-5 space-y-2 max-h-[300px] overflow-y-auto pr-2">
@@ -1065,10 +1076,134 @@
             const modal = document.getElementById('confirmDeleteModal');
             modal.classList.add('opacity-0');
             modal.querySelector('.bg-white').classList.add('scale-95');
-            setTimeout(() => { // Chờ transition kết thúc
+            setTimeout(() => { // Chờ transition kết thúc 
                 modal.classList.add('hidden');
                 deleteCallback = null; // Xóa callback
             }, 300);
+        }
+
+        // MỚI: Hàm xuất lịch sử ra PDF
+        function handleExportHistoryToPDF() {
+            console.log("Đang chuẩn bị xuất PDF...");
+
+            // 1. Định nghĩa font (Quan trọng cho tiếng Việt)
+            pdfMake.fonts = {
+                Roboto: {
+                    normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
+                    bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
+                    italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
+                    bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
+                }
+            };
+
+            // 2. Lấy dữ liệu đã lọc
+            const selectedDateStr = document.getElementById('historyDateFilter').value;
+            let filteredLogs = allHistoryLogs;
+            let reportTitle = "Báo cáo Toàn bộ Lịch sử Hoạt động";
+            let fileName = `BaoCao_TatCaLichSu_${new Date().getTime()}.pdf`;
+
+            if (selectedDateStr) {
+                filteredLogs = allHistoryLogs.filter(log => {
+                    if (!log.timestamp || !log.timestamp.seconds) return false;
+                    const logDate = new Date(log.timestamp.seconds * 1000);
+                    const logDateStr = logDate.getFullYear() + '-' +
+                        ('0' + (logDate.getMonth() + 1)).slice(-2) + '-' +
+                        ('0' + logDate.getDate()).slice(-2);
+                    return logDateStr === selectedDateStr;
+                });
+                
+                // Chuyển YYYY-MM-DD sang DD/MM/YYYY cho tiêu đề
+                const [year, month, day] = selectedDateStr.split('-');
+                reportTitle = `Báo cáo Lịch sử Ngày ${day}/${month}/${year}`;
+                fileName = `BaoCao_${selectedDateStr.replace(/-/g, '')}.pdf`;
+            }
+
+            if (filteredLogs.length === 0) {
+                showError("Không có dữ liệu lịch sử để xuất.");
+                return;
+            }
+
+            // 3. Chuẩn bị nội dung cho bảng
+            const tableBody = [
+                // Header
+                [
+                    { text: 'Thời gian', style: 'tableHeader' },
+                    { text: 'Người dùng', style: 'tableHeader' },
+                    { text: 'Hành động', style: 'tableHeader' }
+                ]
+            ];
+
+            // Thêm các dòng dữ liệu (giống thứ tự hiển thị, mới nhất -> cũ nhất)
+            filteredLogs.forEach(log => {
+                const logDate = new Date((log.timestamp?.seconds || 0) * 1000);
+                const timestamp = logDate.toLocaleString('vi-VN', {
+                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                    day: '2-digit', month: '2-digit', year: 'numeric' // Thêm ngày tháng năm cho rõ ràng
+                });
+                const actor = log.userName || `User (${(log.userId || '...').substring(0, 4)})`;
+                
+                tableBody.push([
+                    { text: timestamp, style: 'tableCell' },
+                    { text: actor, style: 'tableCell' },
+                    { text: log.message, style: 'tableCell' }
+                ]);
+            });
+
+            // 4. Định nghĩa tài liệu
+            const docDefinition = {
+                content: [
+                    { text: reportTitle, style: 'header' },
+                    { text: `Tạo bởi: ${userDisplayName} (ID: ${userId})`, style: 'subheader' },
+                    { text: `Ngày tạo báo cáo: ${new Date().toLocaleString('vi-VN')}`, style: 'subheader' },
+                    {
+                        style: 'tableMain',
+                        table: {
+                            headerRows: 1,
+                            widths: ['auto', 'auto', '*'], // Cột 1, 2 tự động, cột 3 co giãn
+                            body: tableBody
+                        },
+                        layout: {
+                            fillColor: function (rowIndex, node, columnIndex) {
+                                return (rowIndex === 0) ? '#DEDEDE' : null; // Màu xám cho header
+                            }
+                        }
+                    }
+                ],
+                styles: {
+                    header: {
+                        fontSize: 18,
+                        bold: true,
+                        margin: [0, 0, 0, 10]
+                    },
+                    subheader: {
+                        fontSize: 10,
+                        italics: true,
+                        margin: [0, 2, 0, 5]
+                    },
+                    tableMain: {
+                        margin: [0, 5, 0, 15]
+                    },
+                    tableHeader: {
+                        bold: true,
+                        fontSize: 12,
+                        color: 'black'
+                    },
+                    tableCell: {
+                        fontSize: 10
+                    }
+                },
+                defaultStyle: {
+                    font: 'Roboto' // BẮT BUỘC dùng font đã định nghĩa
+                }
+            };
+
+            // 5. Tạo và tải PDF
+            try {
+                pdfMake.createPdf(docDefinition).download(fileName);
+            } catch (error) {
+                console.error("Lỗi khi tạo PDF:", error);
+                showError("Lỗi tạo PDF: " + error.message);
+            }
         }
 
         // Hàm xử lý khi nhấn nút "Xóa" trên modal
@@ -1102,6 +1237,8 @@
             document.getElementById('historyDateFilter').value = ""; // Xóa giá trị date picker
             renderAndFilterHistoryLog(); // Render lại
         });
+        // MỚI: Nút Xuất PDF
+        document.getElementById('exportHistoryPdfBtn').addEventListener('click', handleExportHistoryToPDF);
 
         // --- KHỞI CHẠY ỨNG DỤNG ---
         // Bắt đầu quá trình khởi tạo Firebase
@@ -1111,4 +1248,5 @@
 </body>
 
 </html>
+
 
