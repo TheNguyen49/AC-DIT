@@ -487,6 +487,50 @@ A001C003.mxf
         let unsubscribeHistory = null;
         let unsubscribeProfile = null;
 
+        // Cờ để bỏ qua thông báo âm thanh khi tải trang lần đầu
+        let isInitialEquipmentLoad = true;
+        let isInitialCardLoad = true;
+        let isInitialHistoryLoad = true;
+
+        // --- Logic Âm thanh ---
+        let audioContext = null;
+        // Hàm khởi tạo AudioContext (phải do người dùng kích hoạt)
+        function initAudio() {
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.error("Web Audio API không được hỗ trợ", e);
+                }
+            }
+            // Nếu nó bị tạm dừng (do chính sách trình duyệt), thử resume
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        // Hàm phát tiếng "bíp"
+        function playBeep() {
+            if (!audioContext) return; // Không có audio context
+
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.type = 'sine'; // Loại sóng
+                oscillator.frequency.setValueAtTime(660, audioContext.currentTime); // Tần số (A5)
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime); // Âm lượng
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1); // Kéo dài 0.1 giây
+            } catch (e) {
+                console.error("Lỗi phát âm thanh: ", e);
+            }
+        }
+
         // Cấu hình đường dẫn Firestore (sử dụng /public/data)
         const appId = 'film-manager-app'; // App ID tùy chỉnh
         const equipmentCollection = collection(db, `artifacts/${appId}/public/data/equipment`);
@@ -522,6 +566,7 @@ A001C003.mxf
         // Xử lý Đăng nhập
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            initAudio(); // Kích hoạt âm thanh khi người dùng tương tác
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
             authError.textContent = '';
@@ -540,6 +585,7 @@ A001C003.mxf
         // Xử lý Đăng ký
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            initAudio(); // Kích hoạt âm thanh khi người dùng tương tác
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
             authError.textContent = '';
@@ -556,7 +602,9 @@ A001C003.mxf
                 // onAuthStateChanged sẽ tự động xử lý phần còn lại
             } catch (error) {
                 console.error("Lỗi Đăng ký:", error);
-                if (error.code === 'auth/email-already-in-use') {
+                if (error.code === 'auth/operation-not-allowed') {
+                    authError.textContent = "Đăng ký Email/Pass chưa được bật trên Firebase.";
+                } else if (error.code === 'auth/email-already-in-use') {
                     authError.textContent = "Email này đã được sử dụng.";
                 } else {
                     authError.textContent = "Đã xảy ra lỗi. Vui lòng thử lại.";
@@ -597,6 +645,11 @@ A001C003.mxf
             // Hiển thị nội dung chính
             authContainer.classList.add('hidden');
             mainContent.classList.remove('hidden');
+            
+            // Reset cờ tải lần đầu
+            isInitialEquipmentLoad = true;
+            isInitialCardLoad = true;
+            isInitialHistoryLoad = true;
 
             // Tải tên hiển thị
             loadDisplayName();
@@ -646,6 +699,24 @@ A001C003.mxf
             unsubscribeEquipment = onSnapshot(qEquipment, (snapshot) => {
                 allEquipment = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderEquipment(allEquipment);
+
+                // Logic Âm thanh Thông báo
+                if (isInitialEquipmentLoad) {
+                    isInitialEquipmentLoad = false;
+                } else {
+                    snapshot.docChanges().forEach((change) => {
+                        const docData = change.doc.data();
+                        if (docData.lastUpdatedBy && docData.lastUpdatedBy !== userId) {
+                            if (change.type === "added") {
+                                playBeep();
+                                showSuccess(`Thiết bị mới "${docData.name}" vừa được thêm!`);
+                            } else if (change.type === "modified") {
+                                playBeep();
+                                showSuccess(`Thiết bị "${docData.name}" vừa được cập nhật!`);
+                            }
+                        }
+                    });
+                }
             }, (error) => {
                 console.error("Lỗi lắng nghe Thiết bị: ", error);
                 showError("Không thể tải danh sách thiết bị. Lỗi: " + error.message);
@@ -656,6 +727,24 @@ A001C003.mxf
             unsubscribeCards = onSnapshot(qCards, (snapshot) => {
                 allCards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderCards(allCards);
+
+                // Logic Âm thanh Thông báo
+                if (isInitialCardLoad) {
+                    isInitialCardLoad = false;
+                } else {
+                    snapshot.docChanges().forEach((change) => {
+                        const docData = change.doc.data();
+                        if (docData.lastUpdatedBy && docData.lastUpdatedBy !== userId) {
+                            if (change.type === "added") {
+                                playBeep();
+                                showSuccess(`Thẻ mới "${docData.roll}" vừa được thêm!`);
+                            } else if (change.type === "modified") {
+                                playBeep();
+                                showSuccess(`Thẻ "${docData.roll}" vừa được cập nhật!`);
+                            }
+                        }
+                    });
+                }
             }, (error) => {
                 console.error("Lỗi lắng nghe Thẻ nhớ: ", error);
                 showError("Không thể tải danh sách thẻ nhớ. Lỗi: " + error.message);
@@ -666,6 +755,19 @@ A001C003.mxf
             unsubscribeHistory = onSnapshot(qHistory, (snapshot) => {
                 allHistory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderHistory(allHistory);
+                
+                // Logic Âm thanh Thông báo (chỉ cho mục mới)
+                if (isInitialHistoryLoad) {
+                    isInitialHistoryLoad = false;
+                } else {
+                    snapshot.docChanges().forEach((change) => {
+                        const docData = change.doc.data();
+                        if (change.type === "added" && docData.userId && docData.userId !== userId) {
+                            playBeep();
+                            // Không cần showSuccess vì lịch sử tự nó là 1 thông báo
+                        }
+                    });
+                }
             }, (error) => {
                 console.error("Lỗi lắng nghe Lịch sử: ", error);
                 showError("Không thể tải lịch sử hoạt động. Lỗi: " + error.message);
@@ -947,7 +1049,8 @@ A001C003.mxf
                     action: action,
                     userId: userId,
                     userName: displayName, // Lưu tên hiển thị hiện tại
-                    createdAt: serverTimestamp()
+                    createdAt: serverTimestamp(),
+                    lastUpdatedBy: userId // Thêm trường này cho listener
                 });
             } catch (error) {
                 console.error("Lỗi ghi lịch sử: ", error);
@@ -1017,7 +1120,7 @@ A001C003.mxf
 
         // Tiện ích Escape (dùng cho data-attribute)
         function escape(str) {
-            return str.replace(/[&<>"']/g, function (match) {
+            return (str || '').replace(/[&<>"']/g, function (match) {
                 return {
                     '&': '&amp;',
                     '<': '&lt;',
@@ -1029,7 +1132,7 @@ A001C003.mxf
         }
 
         function unescape(str) {
-            return str.replace(/&amp;|&lt;|&gt;|&quot;|&#39;/g, function (match) {
+            return (str || '').replace(/&amp;|&lt;|&gt;|&quot;|&#39;/g, function (match) {
                 return {
                     '&amp;': '&',
                     '&lt;': '<',
@@ -1167,9 +1270,12 @@ A001C003.mxf
 
 
         // --- Gán các sự kiện (Chỉ chạy 1 lần) ---
+        // Biến cờ để đảm bảo hàm này chỉ chạy 1 lần
+        let eventListenersAttached = false;
+
         function setupEventListeners() {
-            // (Hủy các listener cũ để tránh gán đè)
-            // Code này phức tạp, tạm thời bỏ qua vì chúng ta kiểm soát = onAuthStateChanged
+            if (eventListenersAttached) return; // Nếu đã gán rồi thì không gán lại
+            eventListenersAttached = true;
 
             // Lưu Tên hiển thị
             saveNameBtn.addEventListener('click', async () => {
@@ -1178,6 +1284,7 @@ A001C003.mxf
                     loadingOverlay.classList.remove('hidden');
                     try {
                         const profileRef = doc(profilesCollection, userId);
+                        // Khi lưu tên, ta không cần lastUpdatedBy vì nó chỉ ảnh hưởng tới chính user đó
                         await setDoc(profileRef, { name: newName }, { merge: true });
                         displayName = newName; // Cập nhật local state
                         userDisplayName.textContent = newName;
@@ -1207,7 +1314,8 @@ A001C003.mxf
                         notes: notes,
                         status: 'ready', // Mặc định là sẵn sàng
                         createdAt: serverTimestamp(),
-                        createdBy: userId
+                        createdBy: userId,
+                        lastUpdatedBy: userId // Thêm trường này cho listener
                     });
                     await addHistoryLog(`đã thêm thiết bị mới: "${name}"`);
                     addEquipmentForm.reset();
@@ -1235,7 +1343,8 @@ A001C003.mxf
                         notes: notes,
                         status: 'empty', // Mặc định là trống
                         createdAt: serverTimestamp(),
-                        createdBy: userId
+                        createdBy: userId,
+                        lastUpdatedBy: userId // Thêm trường này cho listener
                     });
                     await addHistoryLog(`đã thêm thẻ mới: "${roll}"`);
                     addCardForm.reset();
@@ -1264,6 +1373,7 @@ A001C003.mxf
                             try {
                                 const itemRef = doc(equipmentCollection, id);
                                 await deleteDoc(itemRef);
+                                // Ghi log xóa (không cần lastUpdatedBy vì doc đã bị xóa)
                                 await addHistoryLog(`đã xóa thiết bị: ${itemName}`);
                                 showSuccess("Đã xóa thiết bị.");
                             } catch (error) {
@@ -1312,7 +1422,10 @@ A001C003.mxf
                     const roll = updateCardStatusBtn.dataset.roll;
                     const statusInfo = getCardStatusInfo(nextStatus);
 
-                    const updateData = { status: nextStatus };
+                    const updateData = { 
+                        status: nextStatus,
+                        lastUpdatedBy: userId // Thêm trường này cho listener
+                    };
                     
                     // Ghi lại thời gian bắt đầu/kết thúc
                     if (nextStatus === 'offloading') {
@@ -1363,14 +1476,17 @@ A001C003.mxf
                     loadingOverlay.classList.remove('hidden');
                     try {
                         const itemRef = doc(equipmentCollection, id);
-                        await updateDoc(itemRef, { status: newStatus });
+                        await updateDoc(itemRef, { 
+                            status: newStatus,
+                            lastUpdatedBy: userId // Thêm trường này cho listener
+                        });
                         statusSelect.dataset.currentStatus = newStatus; // Cập nhật trạng thái hiện tại
                         await addHistoryLog(`đã cập nhật ${itemName} sang trạng thái: ${statusInfo.text}`);
                         showSuccess(`Đã cập nhật ${itemName}!`);
                     } catch (error) {
                         console.error("Lỗi cập nhật thiết bị: ", error);
                         showError("Lỗi: " + error.message);
-_                    } finally {
+                    } finally {
                         loadingOverlay.classList.add('hidden');
                     }
                 }
@@ -1415,7 +1531,10 @@ _                    } finally {
                 loadingOverlay.classList.remove('hidden');
                 try {
                     const itemRef = doc(cardsCollection, id);
-                    await updateDoc(itemRef, { fileManifest: manifestText });
+                    await updateDoc(itemRef, { 
+                        fileManifest: manifestText,
+                        lastUpdatedBy: userId // Thêm trường này cho listener
+                    });
                     await addHistoryLog(`đã cập nhật manifest file cho thẻ "${roll}"`);
                     showSuccess(`Đã lưu manifest cho ${roll}!`);
                     hideManifestModal();
