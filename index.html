@@ -4,347 +4,397 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Dữ liệu & Thiết bị</title>
-    <!-- Tải Tailwind CSS -->
+    <title>Quản lý Dữ liệu & Thiết bị Đoàn phim</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tải Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- pdfmake (Hỗ trợ font tiếng Việt) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"
+        xintegrity="sha512-w61kvDEdEh9EiSAHAB3Ea/dL8LCi/GScvP/b+TH1S/a/c8M7V03lddDkXnEBAW/Bf/fS+cR8AXz3gksn/p/Bw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.js"
+        xintegrity="sha512-n/SBePOHbaUj3sKLAi+X/3V2aXjAmvPsc/P139V0NlA/0iS6fW0iE3oanfRrmbKfmLGj/3V1T/c9G/Hlzzs8wA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <!-- MỚI: Tải pdfmake (cho xuất PDF) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.js"></script>
-
-    <!-- Cấu hình Tailwind cho Dark Mode -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class', // Bật dark mode dựa trên class 'dark'
-        }
-    </script>
     <style>
-        /* Đặt font chữ mặc định */
-        body {
-            font-family: 'Inter', sans-serif;
+        /* Tùy chỉnh thanh cuộn cho webkit (Chrome, Safari) */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
 
-        /* Thêm font Inter từ Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        /* CSS cho modal xác nhận */
-        #confirmDeleteModal {
-            transition: opacity 0.3s ease;
+        ::-webkit-scrollbar-track {
+            background: #1a202c;
+            /* gray-900 */
         }
 
-        #confirmDeleteModal .bg-white {
-            transition: transform 0.3s ease;
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            /* gray-600 */
+            border-radius: 4px;
         }
 
-        /* Nút chuyển trạng thái thẻ */
-        .status-btn {
-            transition: all 0.2s ease;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+            /* gray-500 */
         }
 
-        .status-btn:hover {
-            transform: scale(1.05);
+        /* Biểu tượng Phosphor */
+        .ph {
+            font-size: 1.125rem;
+            /* Tương đương text-lg */
+            line-height: 1;
         }
 
-        /* CSS cho thông báo lỗi */
-        #errorNotification {
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-            transform: translateY(100%);
-            opacity: 0;
+        /* Tùy chỉnh transition cho modal */
+        #confirmDeleteModal,
+        #fileManifestModal {
+            transition: opacity 0.3s ease-out;
         }
 
-        #errorNotification.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        /* CSS cho Spinner loading */
-        .loader {
-            border-top-color: #3498db;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        #confirmDeleteModal>div,
+        #fileManifestModal>div {
+            transition: transform 0.3s ease-out;
         }
     </style>
 </head>
 
-<body class="bg-gray-900 text-gray-100 h-full flex flex-col dark">
+<body class="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100 dark">
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
-        <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-600 h-24 w-24"></div>
-        <span class="ml-4 text-white text-lg font-semibold">Đang tải dữ liệu...</span>
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
     </div>
 
-    <!-- Header -->
-    <header class="bg-gray-800 shadow-md p-4 sticky top-0 z-10">
-        <div class="container mx-auto max-w-7xl flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-white flex items-center gap-2">
-                <i class="ph-bold ph-camera"></i>
-                <span>Trình quản lý AC / DIT</span>
-            </h1>
-            <!-- Hiển thị User ID, Tên và Tên chủ sở hữu -->
-            <div class="text-right">
-                <div class="text-xs text-gray-400">
-                    User ID: <span id="userIdDisplay" class="font-mono bg-gray-700 px-2 py-1 rounded">Đang tải...</span>
+    <!-- Màn hình Đăng nhập / Đăng ký -->
+    <div id="authContainer" class="min-h-screen flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800/60 backdrop-blur-sm shadow-xl rounded-lg p-8 w-full max-w-md border border-gray-700/50">
+            <!-- Form Đăng nhập -->
+            <form id="loginForm">
+                <h2 class="text-2xl font-bold text-center text-white mb-6">Đăng nhập</h2>
+                <div class="mb-4">
+                    <label for="loginEmail" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                    <input type="email" id="loginEmail" required
+                        class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75">
                 </div>
-                <!-- Vùng đặt tên hiển thị -->
-                <div class="mt-2 flex justify-end gap-2 items-center">
-                    <input type="text" id="displayNameInput" placeholder="Đặt tên hiển thị..."
-                        class="w-40 bg-gray-700 border border-gray-600 rounded-md shadow-sm px-2 py-1 text-xs text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    <button id="saveNameBtn"
-                        class="bg-blue-600 text-white font-semibold py-1 px-3 rounded-md shadow-md text-xs hover:bg-blue-700 transition duration-200">
-                        Lưu Tên
+                <div class="mb-6">
+                    <label for="loginPassword" class="block text-sm font-medium text-gray-300 mb-1">Mật khẩu</label>
+                    <input type="password" id="loginPassword" required
+                        class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75">
+                </div>
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:from-blue-600 hover:to-blue-700 transform hover:-translate-y-px transition duration-200">
+                    Đăng nhập
+                </button>
+                <p class="mt-4 text-center text-sm text-gray-400">
+                    Chưa có tài khoản?
+                    <a href="#" id="showRegister" class="font-medium text-blue-400 hover:text-blue-300">Đăng ký ngay</a>
+                </p>
+            </form>
+
+            <!-- Form Đăng ký -->
+            <form id="registerForm" class="hidden">
+                <h2 class="text-2xl font-bold text-center text-white mb-6">Đăng ký tài khoản</h2>
+                <div class="mb-4">
+                    <label for="registerEmail" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                    <input type="email" id="registerEmail" required
+                        class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75">
+                </div>
+                <div class="mb-6">
+                    <label for="registerPassword" class="block text-sm font-medium text-gray-300 mb-1">Mật khẩu</label>
+                    <input type="password" id="registerPassword" required
+                        class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75"
+                        placeholder="Tối thiểu 6 ký tự">
+                </div>
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:from-green-600 hover:to-green-700 transform hover:-translate-y-px transition duration-200">
+                    Đăng ký
+                </button>
+                <p class="mt-4 text-center text-sm text-gray-400">
+                    Đã có tài khoản?
+                    <a href="#" id="showLogin" class="font-medium text-blue-400 hover:text-blue-300">Đăng nhập</a>
+                </p>
+            </form>
+            <p id="authError" class="mt-4 text-center text-sm text-red-400"></p>
+        </div>
+    </div>
+
+    <!-- Nội dung chính của ứng dụng (ẩn ban đầu) -->
+    <div id="mainContent" class="hidden">
+        <!-- Header -->
+        <header class="bg-gray-800/75 backdrop-blur-sm shadow-lg p-4 sticky top-0 z-30 border-b border-gray-700/50">
+            <div class="container mx-auto max-w-7xl flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                    <i class="ph ph-camera text-blue-400"></i>
+                    <span>DIT/AC Dashboard</span>
+                </h1>
+                <div class="flex items-center gap-4">
+                    <!-- Thông tin người dùng và Đặt Tên -->
+                    <div class="text-right">
+                        <div class="text-sm font-medium text-white" id="userDisplayName">...</div>
+                        <div class="text-xs text-gray-400" id="userEmailDisplay">...</div>
+                        <div class="text-xs text-gray-500">Created by Thế Nguyên</div>
+                        <div class="mt-2 flex justify-end gap-2 items-center">
+                            <input type="text" id="displayNameInput" placeholder="Đặt tên hiển thị..."
+                                class="w-40 bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-2 py-1 text-xs text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75">
+                            <button id="saveNameBtn"
+                                class="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-1 px-3 rounded-md shadow-md hover:from-blue-600 hover:to-blue-700 transform hover:-translate-y-px transition duration-200">
+                                Lưu Tên
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Nút Đăng xuất -->
+                    <button id="logoutBtn"
+                        class="bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:from-red-600 hover:to-red-700 transform hover:-translate-y-px transition duration-200">
+                        Đăng xuất
                     </button>
                 </div>
-                <!-- Tên chủ sở hữu -->
-                <div class="text-xs text-gray-500 mt-1">
-                    Created by Thế Nguyên
-                </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <!-- Main Content -->
-    <main id="mainContent" class="container mx-auto max-w-7xl p-4 md:p-6 flex-grow hidden">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Main Content Grid -->
+        <main class="container mx-auto max-w-7xl p-4 lg:p-6">
+            <!-- Thông báo Lỗi/Thành công chung -->
+            <div id="globalError"
+                class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4"
+                role="alert">
+                <strong class="font-bold">Lỗi!</strong>
+                <span class="block sm:inline" id="globalErrorMessage"></span>
+            </div>
+            <div id="globalSuccess"
+                class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative mb-4"
+                role="alert">
+                <strong class="font-bold">Thành công!</strong>
+                <span class="block sm:inline" id="globalSuccessMessage"></span>
+            </div>
 
-            <!-- Cột 1: Quản lý Thiết bị & Lịch sử (ĐÃ DI CHUYỂN LÊN TRÊN) -->
-            <div class="space-y-6">
-                <!-- Quản lý Thiết bị -->
-                <div class="bg-gray-800 shadow-lg rounded-lg overflow-hidden">
-                    <div class="p-5 border-b border-gray-700">
-                        <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-                            <i class="ph-bold ph-camera-plus"></i>
-                            Quản lý Thiết bị
-                        </h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Cột 1: Quản lý Thiết bị & Lịch sử -->
+                <div class="space-y-6">
+                    <!-- Quản lý Thiết bị -->
+                    <div
+                        class="bg-gray-800/60 backdrop-blur-sm shadow-xl rounded-lg overflow-hidden border border-gray-700/50">
+                        <div class="p-5 border-b border-gray-700/50">
+                            <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+                                <i class="ph ph-case text-green-400"></i>
+                                Quản lý Thiết bị
+                            </h2>
+                        </div>
+                        <!-- Form Thêm Thiết bị -->
+                        <form id="addEquipmentForm" class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="sm:col-span-1">
+                                <label for="equipmentName" class="block text-sm font-medium text-gray-300 mb-1">Tên Thiết
+                                    bị</label>
+                                <input type="text" id="equipmentName" name="equipmentName"
+                                    class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75"
+                                    placeholder="A Cam Body" required>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <label for="equipmentCategory"
+                                    class="block text-sm font-medium text-gray-300 mb-1">Loại</label>
+                                <input type="text" id="equipmentCategory" name="equipmentCategory"
+                                    class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75"
+                                    placeholder="Máy quay" required>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="equipmentNotes" class="block text-sm font-medium text-gray-300 mb-1">Ghi chú
+                                    (Số
+                                    Seri, Tình trạng...)</label>
+                                <textarea id="equipmentNotes" name="equipmentNotes" rows="2"
+                                    class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75"
+                                    placeholder="Ví dụ: S/N: 12345, Lens bị kẹt focus nhẹ..."></textarea>
+                            </div>
+                            <button type="submit"
+                                class="sm:col-span-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:from-green-600 hover:to-green-700 transform hover:-translate-y-px transition duration-200 flex items-center justify-center gap-2">
+                                <i class="ph ph-plus-circle"></i>
+                                Thêm Thiết bị
+                            </button>
+                        </form>
+                        <!-- Danh sách Thiết bị -->
+                        <div class="p-5 space-y-4">
+                            <!-- Thanh Tìm kiếm Thiết bị -->
+                            <div class="relative">
+                                <input type="text" id="searchEquipmentInput"
+                                    class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75"
+                                    placeholder="Tìm kiếm thiết bị (theo Tên, Loại, Ghi chú...)">
+                                <i
+                                    class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                            <!-- Danh sách -->
+                            <div id="equipmentList" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                                <!-- Thiết bị sẽ được render ở đây -->
+                                <p class="text-gray-400">Chưa có thiết bị nào...</p>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Form Thêm Thiết bị -->
-                    <form id="addEquipmentForm" class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label for="equipmentName" class="block text-sm font-medium text-gray-300 mb-1">Tên Thiết
-                                bị</label>
-                            <input type="text" id="equipmentName" name="equipmentName"
-                                class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="A Cam Body" required>
+                    <!-- Lịch sử Hoạt động -->
+                    <div
+                        class="bg-gray-800/60 backdrop-blur-sm shadow-xl rounded-lg overflow-hidden border border-gray-700/50">
+                        <div class="p-5 border-b border-gray-700/50">
+                            <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+                                <i class="ph ph-clock-counter-clockwise text-yellow-400"></i>
+                                Lịch sử Hoạt động
+                            </h2>
                         </div>
-                        <div>
-                            <label for="equipmentCategory"
-                                class="block text-sm font-medium text-gray-300 mb-1">Loại</label>
-                            <input type="text" id="equipmentCategory" name="equipmentCategory"
-                                class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Máy quay" required>
+                        <!-- BỘ LỌC NGÀY -->
+                        <div class="p-5 flex flex-wrap gap-4 items-center border-b border-gray-700/50">
+                            <label for="historyDateFilter" class="text-sm font-medium text-gray-300 flex-shrink-0">Xem theo
+                                ngày:</label>
+                            <input type="date" id="historyDateFilter"
+                                class="flex-grow bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75"
+                                style="color-scheme: dark;">
+                            <button id="resetHistoryFilter"
+                                class="bg-gray-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-gray-500 transform hover:-translate-y-px transition duration-200">
+                                Xem tất cả
+                            </button>
+                            <!-- Nút Xuất PDF -->
+                            <button id="exportHistoryPdfBtn"
+                                class="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:from-green-600 hover:to-green-700 transform hover:-translate-y-px transition duration-200 flex items-center gap-1">
+                                <i class="ph ph-file-pdf"></i>
+                                Xuất PDF
+                            </button>
                         </div>
-                        <!-- Thêm ô Ghi chú (Notes) -->
+                        <!-- Danh sách Lịch sử -->
+                        <div id="historyLog" class="p-5 max-h-96 overflow-y-auto pr-2">
+                            <!-- Lịch sử sẽ được render ở đây -->
+                            <p class="text-gray-400">Chưa có hoạt động nào...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cột 2: Quản lý Thẻ nhớ (DIT Log) -->
+                <div
+                    class="bg-gray-800/60 backdrop-blur-sm shadow-xl rounded-lg overflow-hidden border border-gray-700/50">
+                    <div class="p-5 border-b border-gray-700/50">
+                        <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+                            <i class="ph ph-hard-drives text-red-400"></i>
+                            Nhật ký Thẻ nhớ
+                        </h2>
+                    </div>
+                    <!-- Form Thêm Thẻ -->
+                    <form id="addCardForm" class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="sm:col-span-1">
+                            <label for="cardRoll" class="block text-sm font-medium text-gray-300 mb-1">Mã Thẻ (Roll)</label>
+                            <input type="text" id="cardRoll" name="cardRoll"
+                                class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75"
+                                placeholder="A001C001" required>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <label for="cardSource" class="block text-sm font-medium text-gray-300 mb-1">Máy quay
+                                (Source)</label>
+                            <input type="text" id="cardSource" name="cardSource"
+                                class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75"
+                                placeholder="A Cam" required>
+                        </div>
                         <div class="sm:col-span-2">
-                            <label for="equipmentNotes" class="block text-sm font-medium text-gray-300 mb-1">Ghi chú (Số
-                                Seri, Tình trạng...)</label>
-                            <textarea id="equipmentNotes" name="equipmentNotes" rows="2"
-                                class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Ví dụ: S/N: 12345, Lens bị kẹt focus nhẹ..."></textarea>
+                            <label for="cardNotes" class="block text-sm font-medium text-gray-300 mb-1">Ghi chú (Không bắt
+                                buộc)</label>
+                            <textarea id="cardNotes" name="cardNotes" rows="2"
+                                class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75"
+                                placeholder="Ví dụ: 256GB, Quay High-speed, Cảnh test..."></textarea>
                         </div>
                         <button type="submit"
-                            class="sm:col-span-2 bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition duration-200">
-                            Thêm Thiết bị
+                            class="sm:col-span-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:from-blue-600 hover:to-blue-700 transform hover:-translate-y-px transition duration-200 flex items-center justify-center gap-2">
+                            <i class="ph ph-plus-circle"></i>
+                            Thêm Thẻ
                         </button>
                     </form>
-
-
-                    <!-- Danh sách Thiết bị -->
+                    <!-- Danh sách Thẻ -->
                     <div class="p-5 space-y-4">
-                        <!-- Thanh Tìm kiếm Thiết bị -->
+                        <!-- Thanh Tìm kiếm Thẻ -->
                         <div class="relative">
-                            <input type="text" id="searchEquipmentInput"
-                                class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Tìm kiếm thiết bị (theo Tên, Loại, Ghi chú...)">
-                            <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" id="searchCardInput"
+                                class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75"
+                                placeholder="Tìm kiếm thẻ (theo Mã, Nguồn, Ghi chú...)">
+                            <i
+                                class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         </div>
-
-                        <h3 class="text-lg font-semibold text-gray-200 mb-2">Danh sách thiết bị</h3>
-                        <div id="equipmentList" class="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                            <!-- Thiết bị sẽ được thêm vào đây bằng JS -->
+                        <!-- Danh sách -->
+                        <div id="cardList" class="space-y-4 max-h-screen overflow-y-auto pr-2">
+                            <!-- Thẻ sẽ được render ở đây -->
+                            <p class="text-gray-400">Chưa có thẻ nào...</p>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Lịch sử Hoạt động (ĐÃ CẬP NHẬT) -->
-                <div class="bg-gray-800 shadow-lg rounded-lg overflow-hidden">
-                    <div class="p-5 border-b border-gray-700">
-                        <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-                            <i class="ph-bold ph-clock-counter-clockwise"></i>
-                            Lịch sử Hoạt động
-                        </h2>
-                    </div>
-                    <!-- BỘ LỌC NGÀY (MỚI) -->
-                    <div class="p-5 flex flex-wrap gap-4 items-center border-b border-gray-700">
-                        <label for="historyDateFilter" class="text-sm font-medium text-gray-300 flex-shrink-0">Xem theo
-                            ngày:</label>
-                        <input type="date" id="historyDateFilter"
-                            class="flex-grow bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            style="color-scheme: dark;">
-                        <button id="resetHistoryFilter"
-                            class="bg-gray-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-gray-500 transition duration-200">
-                            Xem tất cả
-                        </button>
-                        <!-- MỚI: Nút Xuất PDF -->
-                        <button id="exportHistoryPdfBtn"
-                            class="bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-green-700 transition duration-200 flex items-center gap-1">
-                            <i class="ph ph-file-pdf"></i>
-                            Xuất PDF
-                        </button>
-                    </div>
-                    <div id="historyLogList" class="p-5 space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                        <!-- Log lịch sử sẽ được thêm vào đây -->
-                        <p class="text-gray-400 italic">Chưa có hoạt động nào.</p>
                     </div>
                 </div>
             </div>
-
-            <!-- Cột 2: Quản lý Thẻ nhớ (DIT Log) -->
-            <div class="bg-gray-800 shadow-lg rounded-lg overflow-hidden">
-                <div class="p-5 border-b border-gray-700">
-                    <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-                        <i class="ph-bold ph-hard-drives"></i>
-                        Nhật ký Thẻ nhớ (DIT Log)
-                    </h2>
-                </div>
-
-                <!-- Form Thêm Thẻ -->
-                <form id="addCardForm" class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label for="cardRoll" class="block text-sm font-medium text-gray-300 mb-1">Mã Thẻ (Roll)</label>
-                        <input type="text" id="cardRoll" name="cardRoll"
-                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="A001C001" required>
-                    </div>
-                    <div>
-                        <label for="cardSource" class="block text-sm font-medium text-gray-300 mb-1">Máy quay
-                            (Source)</label>
-                        <input type="text" id="cardSource" name="cardSource"
-                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="A Cam" required>
-                    </div>
-                    <!-- Thêm ô Ghi chú (Notes) -->
-                    <div class="sm:col-span-2">
-                        <label for="cardNotes" class="block text-sm font-medium text-gray-300 mb-1">Ghi chú (Không bắt
-                            buộc)</label>
-                        <textarea id="cardNotes" name="cardNotes" rows="2"
-                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Ví dụ: 256GB, Quay High-speed, Cảnh test..."></textarea>
-                    </div>
-                    <button type="submit"
-                        class="sm:col-span-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200">
-                        Thêm Thẻ
-                    </button>
-                </form>
-
-
-                <!-- Danh sách Thẻ -->
-                <div class="p-5 space-y-4">
-                    <!-- Thanh Tìm kiếm Thẻ -->
-                    <div class="relative">
-                        <input type="text" id="searchCardInput"
-                            class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Tìm kiếm thẻ (theo Mã, Nguồn, Ghi chú...)">
-                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    </div>
-
-                    <h3 class="text-lg font-semibold text-gray-200 mb-2">Danh sách thẻ</h3>
-                    <div id="cardList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                        <!-- Thẻ sẽ được thêm vào đây bằng JS -->
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </main>
+        </main>
+    </div>
 
     <!-- Modal Xác nhận Xóa -->
     <div id="confirmDeleteModal"
         class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-40 hidden opacity-0">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md transform scale-95">
+        <div
+            class="bg-white dark:bg-gray-800/80 backdrop-blur-md border border-gray-700/50 rounded-lg shadow-xl p-6 w-full max-w-md transform scale-95">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="confirmDeleteTitle">Xác nhận Xóa</h3>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-300" id="confirmDeleteMessage">
                 Bạn có chắc chắn muốn xóa mục này không? Hành động này không thể hoàn tác.
             </p>
-            <div class="mt-6 flex justify-end space-x-3">
+            <div class="mt-6 flex justify-end gap-3">
                 <button type="button" id="cancelDeleteBtn"
                     class="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-md shadow-sm hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 transition duration-200">
                     Hủy
                 </button>
                 <button type="button" id="confirmDeleteBtn"
-                    class="bg-red-600 text-white font-semibold py-2 px-4 rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75 transition duration-200">
-                    Xóa
+                    class="bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-2 px-4 rounded-md shadow-sm hover:from-red-600 hover:to-red-700 transform hover:-translate-y-px transition duration-200">
+                    Xác nhận Xóa
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- MỚI: Modal Quản lý Manifest File -->
+    <!-- Modal Quản lý Manifest File -->
     <div id="fileManifestModal"
         class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-40 hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg transform scale-95 transition-transform duration-300">
+        <div
+            class="bg-white dark:bg-gray-800/80 backdrop-blur-md border border-gray-700/50 rounded-lg shadow-xl p-6 w-full max-w-lg transform scale-95 transition-transform duration-300">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="fileManifestTitle">Quản lý Manifest File</h3>
-                <button id="closeManifestModalBtn" class="text-gray-400 hover:text-gray-300">
-                    <i class="ph-bold ph-x text-xl"></i>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="fileManifestTitle">Quản lý Manifest
+                    File</h3>
+                <button id="closeManifestModalBtn"
+                    class="text-gray-400 hover:text-gray-200 transition-colors">
+                    <i class="ph ph-x text-2xl"></i>
                 </button>
             </div>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-300 mb-4" id="fileManifestMessage">
-                Dán danh sách file đã sao chép từ thẻ vào ô dưới đây. Điều này sẽ được lưu lại làm bằng chứng offload.
+            <p class="text-sm text-gray-300 mb-4">
+                Dán danh sách file đã offload từ thẻ. (Dùng lệnh <code>dir /b</code> trên Windows hoặc <code>ls</code>
+                trên Mac/Linux).
             </p>
             <input type="hidden" id="manifestCardId">
             <input type="hidden" id="manifestCardRoll">
             <textarea id="fileManifestTextarea" rows="15"
-                class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
+                class="w-full bg-gray-900/50 border border-gray-700/50 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75 font-mono text-xs"
                 placeholder="A001C001.mxf
 A001C002.mxf
 A001C003.mxf
 ..."></textarea>
-            <div class="mt-6 flex justify-end space-x-3">
+            <div class="mt-6 flex justify-end gap-3">
                 <button type="button" id="cancelManifestBtn"
                     class="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-md shadow-sm hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 transition duration-200">
                     Hủy
                 </button>
                 <button type="button" id="saveManifestBtn"
-                    class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200">
+                    class="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-sm hover:from-blue-600 hover:to-blue-700 transform hover:-translate-y-px transition duration-200 flex items-center justify-center gap-2">
+                    <i class="ph ph-floppy-disk"></i>
                     Lưu Manifest
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Thông báo lỗi -->
-    <div id="errorNotification"
-        class="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-lg shadow-lg z-50 transition-transform duration-300 ease-out translate-y-full opacity-0">
-        <strong class="font-bold">Lỗi!</strong>
-        <span class="block sm:inline" id="errorMessage">Đã xảy ra lỗi.</span>
-    </div>
 
-    <!-- Thông báo thành công (cho việc lưu tên) -->
-    <div id="successNotification"
-        class="fixed bottom-4 left-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 transition-transform duration-300 ease-out translate-y-full opacity-0">
-        <strong class="font-bold">Thành công!</strong>
-        <span class="block sm:inline" id="successMessage">Đã lưu tên thành công.</span>
-    </div>
-
-
-    <!-- Firebase SDKs -->
+    <!-- Firebase và Logic ứng dụng -->
     <script type="module">
-        // Import các hàm từ Firebase SDKs
+        // Import các hàm từ Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import {
             getAuth,
-            signInAnonymously,
             onAuthStateChanged,
-            setPersistence,
-            browserLocalPersistence
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import {
             getFirestore,
@@ -353,826 +403,572 @@ A001C003.mxf
             setDoc,
             updateDoc,
             deleteDoc,
-            onSnapshot,
             collection,
             query,
+            onSnapshot,
             addDoc,
-            Timestamp,
-            serverTimestamp
-            // orderBy không được dùng để tránh lỗi index, sẽ sort ở client
+            serverTimestamp,
+            writeBatch
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 
+        // Cấu hình Firebase của bạn
+        const firebaseConfig = {
+            apiKey: "AIzaSyDwtPQXujh8xZPu9XDP410_dbS9U4a6Gow",
+            authDomain: "quanlydoanphim.firebaseapp.com",
+            projectId: "quanlydoanphim",
+            storageBucket: "quanlydoanphim.firebasestorage.app",
+            messagingSenderId: "1071085758367",
+            appId: "1:1071085758367:web:faef7aa29409499826bfaa",
+            measurementId: "G-XF4429RBPT"
+        };
 
-        // --- BIẾN TOÀN CỤC ---
-        let db, auth, userId, appId;
-        let userDisplayName = 'Người dùng ẩn danh'; // Tên mặc định
-        let cardListContainer = document.getElementById('cardList');
-        let equipmentListContainer = document.getElementById('equipmentList');
-        let historyLogListContainer = document.getElementById('historyLogList');
+        // Khởi tạo Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // Biến lưu trữ toàn bộ dữ liệu (để tìm kiếm và lọc)
-        let allCards = [];
+        // Lấy các phần tử DOM
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const authContainer = document.getElementById('authContainer');
+        const mainContent = document.getElementById('mainContent');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const showRegister = document.getElementById('showRegister');
+        const showLogin = document.getElementById('showLogin');
+        const authError = document.getElementById('authError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userDisplayName = document.getElementById('userDisplayName');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+        const displayNameInput = document.getElementById('displayNameInput');
+        const saveNameBtn = document.getElementById('saveNameBtn');
+
+        const addEquipmentForm = document.getElementById('addEquipmentForm');
+        const equipmentList = document.getElementById('equipmentList');
+        const searchEquipmentInput = document.getElementById('searchEquipmentInput');
+
+        const addCardForm = document.getElementById('addCardForm');
+        const cardList = document.getElementById('cardList');
+        const searchCardInput = document.getElementById('searchCardInput');
+
+        const historyLog = document.getElementById('historyLog');
+        const historyDateFilter = document.getElementById('historyDateFilter');
+        const resetHistoryFilter = document.getElementById('resetHistoryFilter');
+        const exportHistoryPdfBtn = document.getElementById('exportHistoryPdfBtn');
+
+        const globalError = document.getElementById('globalError');
+        const globalErrorMessage = document.getElementById('globalErrorMessage');
+        const globalSuccess = document.getElementById('globalSuccess');
+        const globalSuccessMessage = document.getElementById('globalSuccessMessage');
+
+        const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+        const fileManifestModal = document.getElementById('fileManifestModal');
+        const closeManifestModalBtn = document.getElementById('closeManifestModalBtn');
+        const cancelManifestBtn = document.getElementById('cancelManifestBtn');
+        const saveManifestBtn = document.getElementById('saveManifestBtn');
+        const fileManifestTextarea = document.getElementById('fileManifestTextarea');
+        const fileManifestTitle = document.getElementById('fileManifestTitle');
+        const manifestCardId = document.getElementById('manifestCardId');
+        const manifestCardRoll = document.getElementById('manifestCardRoll');
+
+        // Biến toàn cục
+        let userId = null;
+        let userEmail = null;
+        let displayName = "Người dùng";
         let allEquipment = [];
-        let allHistoryLogs = []; // MỚI: Biến lưu toàn bộ lịch sử
-
-        // Định nghĩa các bộ sưu tập
-        let cardCollectionRef;
-        let equipmentCollectionRef;
-        let historyCollectionRef;
-        let userProfilesCollectionRef; // Collection để lưu tên người dùng
-
-        // Trạng thái modal
+        let allCards = [];
+        let allHistory = [];
         let deleteCallback = null;
+        let currentDateFilter = null;
+        let unsubscribeEquipment = null;
+        let unsubscribeCards = null;
+        let unsubscribeHistory = null;
+        let unsubscribeProfile = null;
 
-        // --- CÁC TRẠNG THÁI (STATUS) ---
+        // Cấu hình đường dẫn Firestore (sử dụng /public/data)
+        const appId = 'film-manager-app'; // App ID tùy chỉnh
+        const equipmentCollection = collection(db, `artifacts/${appId}/public/data/equipment`);
+        const cardsCollection = collection(db, `artifacts/${appId}/public/data/cards`);
+        const historyCollection = collection(db, `artifacts/${appId}/public/data/history`);
+        const profilesCollection = collection(db, `artifacts/${appId}/public/data/userProfiles`);
 
-        // Trạng thái thẻ nhớ
-        const CARD_STATUSES = {
-            EMPTY: { text: "Trống", color: "bg-gray-500", next: "RECORDING" },
-            RECORDING: { text: "Đang Quay", color: "bg-blue-500", next: "NEEDS_OFFLOAD" },
-            NEEDS_OFFLOAD: { text: "Cần Offload", color: "bg-red-600", next: "OFFLOADING" },
-            OFFLOADING: { text: "Đang Offload", color: "bg-yellow-500", next: "OFFLOADED" },
-            OFFLOADED: { text: "Đã Offload", color: "bg-purple-500", next: "VERIFIED" },
-            VERIFIED: { text: "Đã Xác nhận", color: "bg-green-600", next: null } // Trạng thái cuối
-        };
-        const CARD_STATUS_ORDER = Object.keys(CARD_STATUSES);
+        // --- Logic Đăng nhập / Đăng ký ---
 
-        // Trạng thái thiết bị
-        const EQUIPMENT_STATUSES = {
-            READY: { text: "Sẵn sàng", color: "text-green-400" },
-            IN_USE: { text: "Đang dùng", color: "text-blue-400" },
-            PREP: { text: "Cần chuẩn bị", color: "text-yellow-400" },
-            REPAIR: { text: "Cần sửa chữa", color: "text-red-400" }
-        };
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Người dùng đã đăng nhập
+                userId = user.uid;
+                userEmail = user.email;
+                userEmailDisplay.textContent = userEmail;
+                initializeAppLogic(user);
+            } else {
+                // Người dùng đã đăng xuất hoặc chưa đăng nhập
+                userId = null;
+                userEmail = null;
+                authContainer.classList.remove('hidden');
+                mainContent.classList.add('hidden');
+                loadingOverlay.classList.add('hidden');
 
-        // --- HÀM KHỞI TẠO FIREBASE ---
-
-        async function initializeFirebase() {
-            try {
-                // Bật log debug của Firestore
-                setLogLevel('Debug');
-
-                // --- CẤU HÌNH FIREBASE CỦA BẠN ---
-                const firebaseConfig = {
-                    apiKey: "AIzaSyDwtPQXujh8xZPu9XDP410_dbS9U4a6Gow",
-                    authDomain: "quanlydoanphim.firebaseapp.com",
-                    projectId: "quanlydoanphim",
-                    storageBucket: "quanlydoanphim.firebasestorage.app",
-                    messagingSenderId: "1071085758367",
-                    appId: "1:1071085758367:web:faef7aa29409499826bfaa",
-                    measurementId: "G-XF4429RBPT"
-                };
-                // ------------------------------------
-
-                appId = firebaseConfig.appId || 'default-app-id';
-
-                if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
-                    const errorMsg = "Lỗi: Cấu hình Firebase chưa được thiết lập. " +
-                        "Vui lòng tạo dự án Firebase, sao chép cấu hình và dán vào file HTML.";
-                    showError(errorMsg);
-                    console.error(errorMsg);
-                    return;
-                }
-
-                // Khởi tạo Firebase App
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                // Đặt persistence để ưu tiên lưu local
-                await setPersistence(auth, browserLocalPersistence);
-
-                // Lắng nghe thay đổi trạng thái Auth
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        console.log("Người dùng đã đăng nhập:", user.uid);
-                        userId = user.uid;
-                        document.getElementById('userIdDisplay').textContent = userId;
-                        // Khi đã có userId, khởi tạo các đường dẫn collection
-                        setupCollections();
-                        // Tải tên hiển thị của người dùng
-                        await loadUserProfile();
-                        // Tải dữ liệu ban đầu
-                        attachListeners();
-                    } else {
-                        console.log("Người dùng chưa đăng nhập, đang thử đăng nhập...");
-                        userId = null;
-                        document.getElementById('userIdDisplay').textContent = "Đang kết nối...";
-                        // Thử đăng nhập (ẩn danh)
-                        await attemptSignIn();
-                    }
-                });
-
-            } catch (error) {
-                console.error("Lỗi nghiêm trọng khi khởi tạo Firebase:", error);
-                showError("Lỗi khởi tạo Firebase: " + error.message);
-                hideLoading();
+                // Hủy tất cả các listener nếu có
+                if (unsubscribeEquipment) unsubscribeEquipment();
+                if (unsubscribeCards) unsubscribeCards();
+                if (unsubscribeHistory) unsubscribeHistory();
+                if (unsubscribeProfile) unsubscribeProfile();
             }
-        }
+        });
 
-        // Hàm thử đăng nhập
-        async function attemptSignIn() {
+        // Xử lý Đăng nhập
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            authError.textContent = '';
+            loadingOverlay.classList.remove('hidden');
+
             try {
-                console.log("Đang thử đăng nhập ẩn danh...");
-                await signInAnonymously(auth);
+                await signInWithEmailAndPassword(auth, email, password);
                 // onAuthStateChanged sẽ tự động xử lý phần còn lại
             } catch (error) {
-                console.error("Lỗi khi đăng nhập (ẩn danh):", error);
-                if (error.code === 'auth/operation-not-allowed') {
-                    showError("Lỗi đăng nhập: 'Anonymous Sign-in' (Đăng nhập ẩn danh) CHƯA ĐƯỢC BẬT trong Firebase project của bạn.");
-                } else {
-                    showError("Lỗi đăng nhập: " + error.message);
-                }
-                hideLoading();
+                console.error("Lỗi Đăng nhập:", error);
+                authError.textContent = "Email hoặc mật khẩu không đúng.";
+                loadingOverlay.classList.add('hidden');
             }
-        }
+        });
 
-        // --- HÀM THIẾT LẬP COLLECTIONS ---
-        function setupCollections() {
-            if (!userId || !appId) {
-                console.error("Không thể thiết lập collection: userId hoặc appId bị thiếu.");
-                return;
-            }
-            // Quy ước đường dẫn dữ liệu công khai (public)
-            const basePath = `artifacts/${appId}/public/data`;
-            cardCollectionRef = collection(db, `${basePath}/dit_cards`);
-            equipmentCollectionRef = collection(db, `${basePath}/equipment`);
-            historyCollectionRef = collection(db, `${basePath}/history_log`);
-            // Collection mới để lưu hồ sơ người dùng (tên)
-            userProfilesCollectionRef = collection(db, `${basePath}/user_profiles`);
-            console.log("Đã thiết lập đường dẫn collections:", basePath);
-        }
-
-        // --- HÀM TẢI VÀ LƯU TÊN NGƯỜI DÙNG ---
-
-        // Tải hồ sơ người dùng (tên)
-        async function loadUserProfile() {
-            if (!userId) return;
-            try {
-                const userProfileRef = doc(userProfilesCollectionRef, userId);
-                const docSnap = await getDoc(userProfileRef);
-
-                if (docSnap.exists()) {
-                    userDisplayName = docSnap.data().displayName;
-                    document.getElementById('displayNameInput').value = userDisplayName;
-                    console.log("Đã tải tên hiển thị:", userDisplayName);
-                } else {
-                    console.log("Chưa có hồ sơ người dùng, sử dụng tên mặc định.");
-                    userDisplayName = `User (${userId.substring(0, 4)})`; // Tên tạm
-                }
-            } catch (error) {
-                console.error("Lỗi khi tải hồ sơ người dùng:", error);
-                showError("Lỗi tải tên: " + error.message);
-            }
-        }
-
-        // Lưu tên hiển thị
-        async function handleSaveName(e) {
+        // Xử lý Đăng ký
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const newName = document.getElementById('displayNameInput').value.trim();
-            if (!newName) {
-                showError("Tên không được để trống.");
-                return;
-            }
-            if (!userId) {
-                showError("Chưa kết nối được với người dùng.");
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            authError.textContent = '';
+            loadingOverlay.classList.remove('hidden');
+
+            if (password.length < 6) {
+                authError.textContent = "Mật khẩu phải có ít nhất 6 ký tự.";
+                loadingOverlay.classList.add('hidden');
                 return;
             }
 
             try {
-                const userProfileRef = doc(userProfilesCollectionRef, userId);
-                await setDoc(userProfileRef, {
-                    displayName: newName
-                }, { merge: true }); // Dùng setDoc với merge để tạo mới hoặc cập nhật
-
-                userDisplayName = newName; // Cập nhật tên ở local
-                showSuccess("Đã lưu tên thành công!");
-                console.log("Đã lưu tên:", newName);
-
+                await createUserWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged sẽ tự động xử lý phần còn lại
             } catch (error) {
-                console.error("Lỗi khi lưu tên:", error);
-                showError("Lỗi lưu tên: " + error.message);
-            }
-        }
-
-
-        // --- HÀM GẮN LISTENER ---
-        function attachListeners() {
-            if (!cardCollectionRef || !equipmentCollectionRef || !historyCollectionRef) {
-                showError("Lỗi: Không thể tải dữ liệu (Collection Refs chưa sẵn sàng).");
-                hideLoading();
-                return;
-            }
-
-            console.log("Đang gắn listeners...");
-
-            // Lắng nghe thay đổi thẻ
-            onSnapshot(cardCollectionRef, (snapshot) => {
-                allCards = []; // Cập nhật mảng global
-                snapshot.forEach(doc => {
-                    allCards.push({ id: doc.id, ...doc.data() });
-                });
-                // Sắp xếp theo thời gian tạo (mới nhất lên đầu)
-                allCards.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-
-                renderAndFilterCards(); // Gọi hàm filter/render mới
-
-                console.log("Đã cập nhật danh sách thẻ:", allCards.length);
-                hideLoading(); // Ẩn loading sau khi dữ liệu đầu tiên về
-            }, (error) => {
-                console.error("Lỗi khi tải danh sách thẻ:", error);
-                showError("Lỗi tải thẻ: " + error.message);
-                hideLoading();
-            });
-
-            // Lắng nghe thay đổi thiết bị
-            onSnapshot(equipmentCollectionRef, (snapshot) => {
-                allEquipment = []; // Cập nhật mảng global
-                snapshot.forEach(doc => {
-                    allEquipment.push({ id: doc.id, ...doc.data() });
-                });
-                // Sắp xếp theo tên
-                allEquipment.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-                renderAndFilterEquipment(); // Gọi hàm filter/render mới
-
-                console.log("Đã cập nhật danh sách thiết bị:", allEquipment.length);
-            }, (error) => {
-                console.error("Lỗi khi tải danh sách thiết bị:", error);
-                showError("Lỗi tải thiết bị: " + error.message);
-            });
-
-            // Lắng nghe thay đổi lịch sử (ĐÃ CẬP NHẬT)
-            onSnapshot(historyCollectionRef, (snapshot) => {
-                allHistoryLogs = []; // Cập nhật mảng global
-                snapshot.forEach(doc => {
-                    allHistoryLogs.push({ id: doc.id, ...doc.data() });
-                });
-                // Sắp xếp theo thời gian (mới nhất lên đầu)
-                allHistoryLogs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-
-                renderAndFilterHistoryLog(); // Gọi hàm filter/render mới
-
-                console.log("Đã cập nhật lịch sử:", allHistoryLogs.length);
-            }, (error) => {
-                console.error("Lỗi khi tải lịch sử:", error);
-                showError("Lỗi tải lịch sử: " + error.message);
-            });
-        }
-
-        // --- HÀM HIỂN THỊ (RENDER) ---
-
-        // Hàm Lọc và Render Thẻ
-        function renderAndFilterCards() {
-            const searchTerm = document.getElementById('searchCardInput').value.toLowerCase();
-
-            const filteredCards = allCards.filter(card => {
-                return (
-                    (card.roll || '').toLowerCase().includes(searchTerm) ||
-                    (card.source || '').toLowerCase().includes(searchTerm) ||
-                    (card.notes && card.notes.toLowerCase().includes(searchTerm))
-                );
-            });
-
-            renderCardList(filteredCards); // Gọi hàm render với dữ liệu đã lọc
-        }
-
-        // Hiển thị danh sách thẻ
-        function renderCardList(cards) {
-            cardListContainer.innerHTML = ''; // Xóa list cũ
-            if (cards.length === 0) {
-                if (document.getElementById('searchCardInput').value) {
-                    cardListContainer.innerHTML = '<p class="text-gray-400 italic">Không tìm thấy thẻ nào.</p>';
+                console.error("Lỗi Đăng ký:", error);
+                if (error.code === 'auth/email-already-in-use') {
+                    authError.textContent = "Email này đã được sử dụng.";
                 } else {
-                    cardListContainer.innerHTML = '<p class="text-gray-400 italic">Chưa có thẻ nào.</p>';
+                    authError.textContent = "Đã xảy ra lỗi. Vui lòng thử lại.";
                 }
-                return;
+                loadingOverlay.classList.add('hidden');
             }
+        });
 
-            cards.forEach(card => {
-                const statusInfo = CARD_STATUSES[card.status] || CARD_STATUSES.EMPTY;
-                const nextStatusKey = statusInfo.next;
-                const nextStatusInfo = nextStatusKey ? CARD_STATUSES[nextStatusKey] : null;
+        // Xử lý Đăng xuất
+        logoutBtn.addEventListener('click', async () => {
+            loadingOverlay.classList.remove('hidden');
+            await signOut(auth);
+            // onAuthStateChanged sẽ tự động dọn dẹp và hiển thị màn hình đăng nhập
+            loginForm.reset();
+            registerForm.reset();
+            authError.textContent = '';
+            loadingOverlay.classList.add('hidden');
+        });
 
-                // MỚI: Lấy và format thời gian copy
-                const startTime = formatTimestamp(card.copyStartTime);
-                const endTime = formatTimestamp(card.copyEndTime);
-                let timeLogHtml = '';
-                
-                if (startTime) {
-                    timeLogHtml += `
-                        <p class="text-xs text-gray-400 mt-1">
-                            <i class="ph ph-play-circle text-blue-400"></i> Bắt đầu copy: <span class="font-mono">${startTime}</span>
-                        </p>
-                    `;
-                }
-                if (endTime) {
-                     timeLogHtml += `
-                        <p class="text-xs text-gray-400 mt-1">
-                            <i class="ph ph-stop-circle text-green-400"></i> Kết thúc copy: <span class="font-mono">${endTime}</span>
-                        </p>
-                    `;
-                }
+        // Chuyển đổi giữa các form
+        showRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            authError.textContent = '';
+        });
 
-                const cardEl = document.createElement('div');
-                cardEl.className = `p-4 rounded-lg shadow-md border-l-4 ${statusInfo.color.replace('bg-', 'border-')} ${statusInfo.color} bg-opacity-20`;
-                cardEl.innerHTML = `
-            <div class="flex justify-between items-start">
-                <div class="flex-1">
-                    <h4 class="text-lg font-bold text-white">${card.roll}</h4>
-                    <p class="text-sm text-gray-300">${card.source}</p>
-                    <p class="text-xs text-gray-400 mt-1">
-                        Trạng thái: <span class="font-semibold ${statusInfo.color} px-2 py-0.5 rounded">${statusInfo.text}</span>
-                    </p>
-                    
-                    <!-- MỚI: Hiển thị lịch sử copy -->
-                    <div class="mt-2">
-                        ${timeLogHtml}
-                    </div>
+        showLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            authError.textContent = '';
+        });
 
-                    <!-- Hiển thị Ghi chú -->
-                    ${card.notes ? `
-                        <p class="text-sm text-gray-300 mt-2 bg-gray-700 p-2 rounded-md whitespace-pre-wrap font-mono text-xs">
-                            <i class="ph ph-note mr-1"></i>${card.notes}
-                        </p>
-                    ` : ''}
+        // --- Logic chính của Ứng dụng ---
 
-                    <!-- MỚI: Hiển thị Manifest File -->
-                    ${card.fileManifest ? `
-                        <details class="mt-2">
-                            <summary class="text-sm text-blue-300 cursor-pointer hover:underline">Xem Manifest File (${(card.fileManifest.match(/\n/g) || []).length + 1} files)</summary>
-                            <pre class="text-xs text-gray-300 mt-2 bg-gray-900 p-3 rounded-md whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">${card.fileManifest}</pre>
-                        </details>
-                    ` : `
-                         <p class="text-sm text-gray-400 italic mt-2">Chưa có manifest file.</p>
-                    `}
+        function initializeAppLogic(user) {
+            // Hiển thị nội dung chính
+            authContainer.classList.add('hidden');
+            mainContent.classList.remove('hidden');
 
-                </div>
-                <div class="flex flex-col items-end gap-2 flex-shrink-0 ml-4">
-                    ${nextStatusInfo ? `
-                        <button data-id="${card.id}" data-current-status="${card.status}" data-next-status="${nextStatusKey}"
-                                class="status-btn text-sm font-medium ${nextStatusInfo.color} text-white px-3 py-1 rounded-md shadow-sm hover:opacity-80">
-                            <i class="ph-bold ph-arrow-right mr-1"></i>
-                            ${nextStatusInfo.text}
-                        </button>
-                    ` : `
-                        <span class="text-sm font-medium text-green-300 px-3 py-1"><i class="ph-bold ph-check-circle"></i> Hoàn tất</span>
-                    `}
-                    <!-- MỚI: Nút Quản lý Manifest -->
-                    <button data-id="${card.id}" data-roll="${card.roll}" data-manifest="${escape(card.fileManifest || '')}"
-                            class="manage-manifest-btn text-sm font-medium text-gray-300 hover:text-white px-3 py-1 rounded-md shadow-sm hover:bg-gray-700 flex items-center gap-1">
-                        <i class="ph ph-list-bullets"></i> Manifest
-                    </button>
-                    <button data-id="${card.id}" class="delete-card-btn text-gray-400 hover:text-red-500 transition-colors">
-                        <i class="ph-bold ph-trash text-lg"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-                cardListContainer.appendChild(cardEl);
-            });
+            // Tải tên hiển thị
+            loadDisplayName();
 
-            // Gắn listener cho các nút mới
-            document.querySelectorAll('.status-btn').forEach(btn => {
-                btn.addEventListener('click', handleChangeCardStatus);
-            });
-            document.querySelectorAll('.delete-card-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = e.currentTarget.getAttribute('data-id');
-                    handleDeleteCard(id);
-                });
-            });
-            // MỚI: Gắn listener cho nút Manifest
-            document.querySelectorAll('.manage-manifest-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = e.currentTarget.getAttribute('data-id');
-                    const roll = e.currentTarget.getAttribute('data-roll');
-                    // Dùng unescape để lấy lại giá trị gốc (vì manifest có thể chứa ký tự đặc biệt)
-                    const manifest = unescape(e.currentTarget.getAttribute('data-manifest'));
-                    openManifestModal(id, roll, manifest);
-                });
-            });
+            // Thiết lập các listener thời gian thực
+            setupListeners();
+
+            // Thiết lập các trình gán sự kiện (chỉ 1 lần)
+            setupEventListeners();
+
+            // Ẩn loading
+            loadingOverlay.classList.add('hidden');
         }
 
-        // Hàm Lọc và Render Thiết bị
-        function renderAndFilterEquipment() {
-            const searchTerm = document.getElementById('searchEquipmentInput').value.toLowerCase();
-
-            const filteredEquipment = allEquipment.filter(item => {
-                return (
-                    (item.name || '').toLowerCase().includes(searchTerm) ||
-                    (item.category || '').toLowerCase().includes(searchTerm) ||
-                    (item.notes && item.notes.toLowerCase().includes(searchTerm))
-                );
-            });
-
-            renderEquipmentList(filteredEquipment); // Gọi hàm render với dữ liệu đã lọc
-        }
-
-        // Hiển thị danh sách thiết bị
-        function renderEquipmentList(equipment) {
-            equipmentListContainer.innerHTML = ''; // Xóa list cũ
-            if (equipment.length === 0) {
-                if (document.getElementById('searchEquipmentInput').value) {
-                    equipmentListContainer.innerHTML = '<p class="text-gray-400 italic">Không tìm thấy thiết bị nào.</p>';
+        async function loadDisplayName() {
+            if (!userId) return;
+            const profileRef = doc(profilesCollection, userId);
+            
+            // Lắng nghe thay đổi tên (nếu user đổi ở thiết bị khác)
+            if (unsubscribeProfile) unsubscribeProfile();
+            unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    displayName = docSnap.data().name;
+                    userDisplayName.textContent = displayName;
+                    displayNameInput.value = displayName;
                 } else {
-                    equipmentListContainer.innerHTML = '<p class="text-gray-400 italic">Chưa có thiết bị nào.</p>';
+                    displayName = "Người dùng"; // Mặc định
+                    userDisplayName.textContent = displayName;
                 }
+            }, (error) => {
+                console.error("Lỗi tải tên hiển thị (profile): ", error);
+                // Hiển thị tên mặc định nếu lỗi (có thể do rules)
+                displayName = "Người dùng";
+                userDisplayName.textContent = displayName;
+            });
+        }
+
+        // Thiết lập các listener (chỉ gọi 1 lần sau khi đăng nhập)
+        function setupListeners() {
+            // Hủy listener cũ nếu có
+            if (unsubscribeEquipment) unsubscribeEquipment();
+            if (unsubscribeCards) unsubscribeCards();
+            if (unsubscribeHistory) unsubscribeHistory();
+
+            // Lắng nghe Thiết bị
+            const qEquipment = query(equipmentCollection);
+            unsubscribeEquipment = onSnapshot(qEquipment, (snapshot) => {
+                allEquipment = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderEquipment(allEquipment);
+            }, (error) => {
+                console.error("Lỗi lắng nghe Thiết bị: ", error);
+                showError("Không thể tải danh sách thiết bị. Lỗi: " + error.message);
+            });
+
+            // Lắng nghe Thẻ nhớ
+            const qCards = query(cardsCollection);
+            unsubscribeCards = onSnapshot(qCards, (snapshot) => {
+                allCards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderCards(allCards);
+            }, (error) => {
+                console.error("Lỗi lắng nghe Thẻ nhớ: ", error);
+                showError("Không thể tải danh sách thẻ nhớ. Lỗi: " + error.message);
+            });
+
+            // Lắng nghe Lịch sử
+            const qHistory = query(historyCollection);
+            unsubscribeHistory = onSnapshot(qHistory, (snapshot) => {
+                allHistory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderHistory(allHistory);
+            }, (error) => {
+                console.error("Lỗi lắng nghe Lịch sử: ", error);
+                showError("Không thể tải lịch sử hoạt động. Lỗi: " + error.message);
+            });
+        }
+
+        // --- Các hàm Render ---
+
+        function renderEquipment(equipment) {
+            equipmentList.innerHTML = ''; // Xóa danh sách cũ
+            const searchTerm = searchEquipmentInput.value.toLowerCase();
+
+            // Sắp xếp: thiết bị mới nhất lên đầu (nếu có timestamp)
+            equipment.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+            const filteredEquipment = equipment.filter(item =>
+                item.name.toLowerCase().includes(searchTerm) ||
+                item.category.toLowerCase().includes(searchTerm) ||
+                (item.notes && item.notes.toLowerCase().includes(searchTerm))
+            );
+
+            if (filteredEquipment.length === 0) {
+                equipmentList.innerHTML = '<p class="text-gray-400">Không tìm thấy thiết bị nào...</p>';
                 return;
             }
-            equipment.forEach(item => {
-                const statusInfo = EQUIPMENT_STATUSES[item.status] || EQUIPMENT_STATUSES.READY;
 
-                // Tạo các option cho select
-                let optionsHtml = '';
-                for (const key in EQUIPMENT_STATUSES) {
-                    optionsHtml += `<option value="${key}" ${item.status === key ? 'selected' : ''}>${EQUIPMENT_STATUSES[key].text}</option>`;
-                }
+            filteredEquipment.forEach(item => {
+                const statusInfo = getEquipmentStatusInfo(item.status);
+                const optionsHtml = ['ready', 'in_use', 'needs_prep', 'needs_repair'].map(status => {
+                    const info = getEquipmentStatusInfo(status);
+                    return `<option value="${status}" ${item.status === status ? 'selected' : ''}>${info.text}</option>`;
+                }).join('');
 
                 const itemEl = document.createElement('div');
-                itemEl.className = 'p-3 bg-gray-700 rounded-lg flex justify-between items-start gap-4';
+                itemEl.className = 'p-3 bg-gray-700/50 rounded-lg flex justify-between items-start gap-4 border border-gray-600/50';
                 itemEl.innerHTML = `
             <div class="flex-1">
                 <h4 class="text-md font-semibold text-white">${item.name}</h4>
                 <p class="text-sm text-gray-400">${item.category}</p>
                 <!-- Hiển thị Ghi chú -->
                 ${item.notes ? `
-                    <p class="text-sm text-gray-300 mt-2 bg-gray-600 p-2 rounded-md whitespace-pre-wrap font-mono text-xs">
+                    <p class="text-sm text-gray-300 mt-2 bg-gray-600/50 p-2 rounded-md whitespace-pre-wrap font-mono text-xs">
                         <i class="ph ph-note mr-1"></i>${item.notes}
                     </p>
                 ` : ''}
             </div>
             <div class="flex flex-col items-end gap-3 flex-shrink-0">
                 <select data-id="${item.id}" data-current-status="${item.status}"
-                    class="equipment-status-select bg-gray-600 border border-gray-500 text-white text-sm rounded-md shadow-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusInfo.color} w-full">
+                    class="equipment-status-select bg-gray-900/50 border border-gray-700/50 text-white text-sm rounded-md shadow-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-gray-900/75 ${statusInfo.color} w-full">
                     ${optionsHtml}
                 </select>
                 <button data-id="${item.id}" class="delete-equipment-btn text-gray-400 hover:text-red-500 transition-colors">
-                    <i class="ph-bold ph-trash text-lg"></i>
+                    <i class="ph ph-trash"></i>
                 </button>
             </div>
         `;
-                equipmentListContainer.appendChild(itemEl);
-            });
-
-            // Gắn listener cho các nút/select mới
-            document.querySelectorAll('.delete-equipment-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = e.currentTarget.getAttribute('data-id');
-                    handleDeleteEquipment(id);
-                });
-            });
-            document.querySelectorAll('.equipment-status-select').forEach(select => {
-                select.addEventListener('change', handleChangeEquipmentStatus);
+                equipmentList.appendChild(itemEl);
             });
         }
 
-        // MỚI: Hàm lọc và render Lịch sử
-        function renderAndFilterHistoryLog() {
-            const selectedDateStr = document.getElementById('historyDateFilter').value;
+        function renderCards(cards) {
+            cardList.innerHTML = ''; // Xóa danh sách cũ
+            const searchTerm = searchCardInput.value.toLowerCase();
 
-            let filteredLogs = allHistoryLogs;
+            // Sắp xếp: thẻ mới nhất lên đầu
+            cards.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
-            if (selectedDateStr) { // Nếu có ngày được chọn
-                filteredLogs = allHistoryLogs.filter(log => {
-                    if (!log.timestamp || !log.timestamp.seconds) return false;
+            const filteredCards = cards.filter(card =>
+                card.roll.toLowerCase().includes(searchTerm) ||
+                card.source.toLowerCase().includes(searchTerm) ||
+                (card.notes && card.notes.toLowerCase().includes(searchTerm))
+            );
 
-                    const logDate = new Date(log.timestamp.seconds * 1000);
-                    // Chuyển đổi sang YYYY-MM-DD ở múi giờ địa phương
-                    const logDateStr = logDate.getFullYear() + '-' +
-                        ('0' + (logDate.getMonth() + 1)).slice(-2) + '-' +
-                        ('0' + logDate.getDate()).slice(-2);
+            if (filteredCards.length === 0) {
+                cardList.innerHTML = '<p class="text-gray-400">Không tìm thấy thẻ nào...</p>';
+                return;
+            }
 
-                    return logDateStr === selectedDateStr;
+            filteredCards.forEach(card => {
+                const statusInfo = getCardStatusInfo(card.status);
+                const cardEl = document.createElement('div');
+                cardEl.className = `p-4 rounded-lg shadow-lg border-l-4 ${statusInfo.color.replace('bg-', 'border-')} ${statusInfo.color} bg-opacity-30 backdrop-blur-sm`;
+                cardEl.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div>
+                    <h4 class="text-lg font-bold text-white">${card.roll}</h4>
+                    <p class="text-sm text-gray-300">${card.source}</p>
+                    <span class="inline-block text-xs font-semibold px-2 py-0.5 rounded ${statusInfo.color} ${statusInfo.textColor} mt-2">
+                        ${statusInfo.text}
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <!-- NÚT QUẢN LÝ MANIFEST -->
+                    <button data-id="${card.id}" data-roll="${card.roll}" data-manifest="${escape(card.fileManifest || '')}"
+                            class="manage-manifest-btn text-sm font-medium text-gray-300 hover:text-white px-3 py-1 rounded-md shadow-sm hover:bg-gray-700/50 flex items-center gap-1">
+                        <i class="ph ph-list-bullets"></i> Manifest
+                    </button>
+                    <button data-id="${card.id}" class="delete-card-btn text-gray-400 hover:text-red-500 transition-colors">
+                        <i class="ph ph-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="mt-4 space-y-2">
+                <!-- Nút chuyển trạng thái -->
+                ${statusInfo.nextAction ? `
+                    <button data-id="${card.id}" data-roll="${card.roll}" data-next-status="${statusInfo.nextAction.status}"
+                        class="card-status-btn w-full text-white font-semibold py-2 px-4 rounded-md shadow-md transform hover:-translate-y-px transition duration-200 ${statusInfo.nextAction.color}">
+                        ${statusInfo.nextAction.text}
+                    </button>
+                ` : ''}
+
+                <!-- Hiển thị Ghi chú -->
+                ${card.notes ? `
+                    <p class="text-sm text-gray-300 mt-2 bg-gray-700/50 p-2 rounded-md whitespace-pre-wrap font-mono text-xs">
+                        <i class="ph ph-note mr-1"></i>${card.notes}
+                    </p>
+                ` : ''}
+                
+                <!-- Hiển thị Lịch sử Copy (MỚI) -->
+                ${card.offloadStartTime ? `
+                    <p class="text-xs text-gray-400 mt-2 bg-gray-700/50 p-2 rounded-md font-mono">
+                        <i class="ph ph-play-circle mr-1"></i> Bắt đầu Offload: ${formatTimestamp(card.offloadStartTime)}
+                        ${card.offloadEndTime ? `<br><i class="ph ph-check-circle mr-1"></i> Kết thúc Offload: ${formatTimestamp(card.offloadEndTime)}` : ''}
+                    </p>
+                ` : ''}
+
+                <!-- Hiển thị Manifest File (MỚI) -->
+                ${card.fileManifest ? `
+                    <details class="mt-2">
+                        <summary class="text-sm text-blue-300 cursor-pointer hover:underline">Xem Manifest File (${(card.fileManifest.match(/\n/g) || []).length + 1} files)</summary>
+                        <pre class="text-xs text-gray-300 mt-2 bg-gray-900/75 p-3 rounded-md whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">${card.fileManifest}</pre>
+                    </details>
+                ` : `
+                    <p class="text-xs text-gray-500 mt-2 italic">(Chưa có manifest file)</p>
+                `}
+            </div>
+        `;
+                cardList.appendChild(cardEl);
+            });
+        }
+
+        function renderHistory(history) {
+            historyLog.innerHTML = ''; // Xóa danh sách cũ
+
+            // Sắp xếp: mới nhất lên đầu
+            history.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+            let filteredHistory = history;
+
+            // Lọc theo ngày (nếu có)
+            if (currentDateFilter) {
+                filteredHistory = history.filter(log => {
+                    if (!log.createdAt) return false;
+                    const logDate = log.createdAt.toDate().toISOString().split('T')[0];
+                    return logDate === currentDateFilter;
                 });
             }
 
-            renderHistoryLog(filteredLogs); // Gọi hàm render với dữ liệu đã lọc (hoặc toàn bộ)
+            if (filteredHistory.length === 0) {
+                historyLog.innerHTML = '<p class="text-gray-400">Không có hoạt động nào trong ngày này...</p>';
+                return;
+            }
+
+            // Phân nhóm theo ngày
+            let currentDayStr = "";
+            filteredHistory.forEach(log => {
+                const logDate = log.createdAt ? log.createdAt.toDate() : new Date();
+                const dayStr = formatDateForGrouping(logDate);
+
+                if (dayStr !== currentDayStr) {
+                    currentDayStr = dayStr;
+                    const dateHeader = document.createElement('h5');
+                    // Thêm class first:.. để không bị gạch ngang/margin ở header đầu tiên
+                    dateHeader.className = "text-md font-semibold text-blue-300 mt-4 pt-2 border-t border-gray-700/50 first:mt-0 first:pt-0 first:border-t-0";
+                    dateHeader.textContent = currentDayStr;
+                    historyLog.appendChild(dateHeader);
+                }
+
+                const logEl = document.createElement('div');
+                logEl.className = 'p-2 border-b border-gray-700/50 last:border-b-0';
+
+                // Luôn hiển thị giờ:phút:giây
+                const timeStr = logDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                logEl.innerHTML = `
+            <p class="text-sm text-gray-200">
+                <span class="text-xs text-gray-400 mr-2">[${timeStr}]</span>
+                <strong class="text-yellow-300">${log.userName || 'Người dùng'}</strong>
+                ${log.action}
+            </p>
+            `;
+                historyLog.appendChild(logEl);
+            });
         }
 
-        // MỚI: Hàm helper định dạng ngày
-        function formatHistoryDate(date) {
+        // --- Các hàm tiện ích (Helpers) ---
+
+        function getEquipmentStatusInfo(status) {
+            switch (status) {
+                case 'in_use':
+                    return { text: 'Đang dùng', color: 'bg-red-600' };
+                case 'needs_prep':
+                    return { text: 'Cần chuẩn bị', color: 'bg-yellow-500' };
+                case 'needs_repair':
+                    return { text: 'Cần sửa chữa', color: 'bg-orange-600' };
+                case 'ready':
+                default:
+                    return { text: 'Sẵn sàng', color: 'bg-green-600' };
+            }
+        }
+
+        function getCardStatusInfo(status) {
+            switch (status) {
+                case 'empty':
+                    return {
+                        text: 'Trống', color: 'bg-gray-500', textColor: 'text-white',
+                        nextAction: { text: 'Chuyển sang: Đang Quay', status: 'shooting', color: 'bg-blue-500 hover:bg-blue-600' }
+                    };
+                case 'shooting':
+                    return {
+                        text: 'Đang Quay', color: 'bg-blue-500', textColor: 'text-white',
+                        nextAction: { text: 'Chuyển sang: Cần Offload', status: 'needs_offload', color: 'bg-red-500 hover:bg-red-600' }
+                    };
+                case 'needs_offload':
+                    return {
+                        text: 'Cần Offload', color: 'bg-red-500', textColor: 'text-white',
+                        nextAction: { text: 'Chuyển sang: Đang Offload', status: 'offloading', color: 'bg-yellow-500 hover:bg-yellow-600' }
+                    };
+                case 'offloading':
+                    return {
+                        text: 'Đang Offload', color: 'bg-yellow-500', textColor: 'text-gray-900',
+                        nextAction: { text: 'Chuyển sang: Đã Offload', status: 'offloaded', color: 'bg-purple-500 hover:bg-purple-600' }
+                    };
+                case 'offloaded':
+                    return {
+                        text: 'Đã Offload', color: 'bg-purple-500', textColor: 'text-white',
+                        nextAction: { text: 'Chuyển sang: Đã Xác nhận (Verified)', status: 'verified', color: 'bg-green-500 hover:bg-green-600' }
+                    };
+                case 'verified':
+                    return {
+                        text: 'Đã Xác nhận', color: 'bg-green-500', textColor: 'text-white',
+                        nextAction: null // Trạng thái cuối cùng
+                    };
+                default:
+                    return { text: 'Không xác định', color: 'bg-gray-700', textColor: 'text-white', nextAction: null };
+            }
+        }
+
+        function formatTimestamp(ts) {
+            if (!ts) return "N/A";
+            return ts.toDate().toLocaleString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function formatDateForGrouping(date) {
             const today = new Date();
             const yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
 
-            const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const dateStr = date.toISOString().split('T')[0];
+            const todayStr = today.toISOString().split('T')[0];
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-            if (date.toDateString() === today.toDateString()) {
-                return `Hôm nay (${dateStr})`;
-            }
-            if (date.toDateString() === yesterday.toDateString()) {
-                return `Hôm qua (${dateStr})`;
-            }
-            return `Ngày ${dateStr}`;
+            if (dateStr === todayStr) return "Hôm nay";
+            if (dateStr === yesterdayStr) return "Hôm qua";
+            return date.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
         }
 
-        // Hiển thị lịch sử (ĐÃ CẬP NHẬT để phân nhóm)
-        function renderHistoryLog(logs) {
-            historyLogListContainer.innerHTML = ''; // Xóa list cũ
-
-            if (logs.length === 0) {
-                if (document.getElementById('historyDateFilter').value) {
-                    historyLogListContainer.innerHTML = '<p class="text-gray-400 italic">Không tìm thấy hoạt động nào cho ngày này.</p>';
-                } else {
-                    historyLogListContainer.innerHTML = '<p class="text-gray-400 italic">Chưa có hoạt động nào.</p>';
-                }
-                return;
-            }
-
-            let currentDayStr = "";
-            // Biến này kiểm tra xem có đang lọc theo ngày không
-            const isFilteringByDate = !!document.getElementById('historyDateFilter').value;
-
-            logs.forEach(log => {
-                if (!log.timestamp || !log.timestamp.seconds) {
-                    return; // Bỏ qua log không có timestamp
-                }
-
-                const logDate = new Date(log.timestamp.seconds * 1000);
-
-                // Chỉ hiển thị nhóm ngày nếu KHÔNG lọc (xem tất cả)
-                if (!isFilteringByDate) {
-                    const logDayStr = formatHistoryDate(logDate); // Dùng hàm helper
-
-                    if (logDayStr !== currentDayStr) {
-                        currentDayStr = logDayStr;
-                        const dateHeader = document.createElement('h4');
-                        // Thêm class first:.. để không bị gạch ngang/margin ở header đầu tiên
-                        dateHeader.className = "text-md font-semibold text-blue-300 mt-4 pt-2 border-t border-gray-700 first:mt-0 first:pt-0 first:border-t-0";
-                        dateHeader.textContent = currentDayStr;
-                        historyLogListContainer.appendChild(dateHeader);
-                    }
-                }
-
-                const logEl = document.createElement('div');
-                logEl.className = 'p-2 border-b border-gray-700 last:border-b-0';
-
-                // Luôn hiển thị giờ:phút:giây
-                const timestamp = logDate.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-                const actor = log.userName || `User (${(log.userId || '...').substring(0, 4)})`;
-
-                logEl.innerHTML = `
-            <p class="text-sm text-gray-200"><span class="font-semibold text-blue-300">${actor}</span> ${log.message}</p>
-            <p class="text-xs text-gray-400">${timestamp}</p>
-        `;
-                historyLogListContainer.appendChild(logEl);
-            });
-        }
-
-
-        // --- HÀM XỬ LÝ (LOGIC) ---
-
-        // Hàm ghi lịch sử chung
-        async function logHistory(message) {
+        // Ghi Lịch sử Hoạt động
+        async function addHistoryLog(action) {
             try {
-                await addDoc(historyCollectionRef, {
-                    message: message,
-                    timestamp: serverTimestamp(),
+                await addDoc(historyCollection, {
+                    action: action,
                     userId: userId,
-                    userName: userDisplayName // <-- Thêm tên hiển thị vào log
+                    userName: displayName, // Lưu tên hiển thị hiện tại
+                    createdAt: serverTimestamp()
                 });
             } catch (error) {
-                console.error("Lỗi khi ghi lịch sử:", error);
-                showError("Lỗi ghi lịch sử: " + error.message);
+                console.error("Lỗi ghi lịch sử: ", error);
+                showError("Không thể ghi lại lịch sử hoạt động.");
             }
         }
 
-        // Thêm thẻ mới
-        async function handleAddCard(e) {
-            e.preventDefault();
-            const roll = document.getElementById('cardRoll').value;
-            const source = document.getElementById('cardSource').value;
-            const notes = document.getElementById('cardNotes').value; // Thêm notes
-            if (!roll || !source) {
-                showError("Vui lòng nhập đầy đủ Mã Thẻ và Máy quay.");
-                return;
-            }
-
-            try {
-                const newCard = {
-                    roll: roll,
-                    source: source,
-                    notes: notes || "", // Lưu notes
-                    status: CARD_STATUS_ORDER[0], // Bắt đầu từ 'EMPTY'
-                    createdAt: serverTimestamp(),
-                    userId: userId,
-                    userName: userDisplayName, // Lưu lại ai đã tạo
-                    copyStartTime: null, // MỚI: Khởi tạo
-                    copyEndTime: null,   // MỚI: Khởi tạo
-                    fileManifest: ""     // MỚI: Khởi tạo manifest rỗng
-                };
-                await addDoc(cardCollectionRef, newCard);
-                // Ghi lịch sử (message giờ chỉ cần hành động)
-                await logHistory(`đã thêm thẻ ${roll} (${source}).`);
-                // Reset form
-                e.target.reset();
-            } catch (error) {
-                console.error("Lỗi khi thêm thẻ:", error);
-                showError("Lỗi thêm thẻ: " + error.message);
-            }
-        }
-
-        // Thay đổi trạng thái thẻ
-        async function handleChangeCardStatus(e) {
-            const btn = e.currentTarget;
-            const id = btn.getAttribute('data-id');
-            const currentStatus = btn.getAttribute('data-current-status');
-            const nextStatus = btn.getAttribute('data-next-status');
-
-            if (!id || !nextStatus) return;
-
-            try {
-                const cardRef = doc(db, cardCollectionRef.path, id);
-                
-                // MỚI: Thêm logic lưu thời gian
-                let updateData = {
-                    status: nextStatus
-                };
-                
-                if (nextStatus === "OFFLOADING") {
-                    updateData.copyStartTime = serverTimestamp(); // Bắt đầu copy
-                }
-                
-                if (nextStatus === "OFFLOADED") {
-                    updateData.copyEndTime = serverTimestamp(); // Kết thúc copy
-                }
-
-                await updateDoc(cardRef, updateData); // Dùng updateData mới
-
-                // Ghi lịch sử
-                const cardDoc = await getDoc(cardRef);
-                const cardRoll = cardDoc.data()?.roll || 'Thẻ không rõ';
-                await logHistory(`đã chuyển thẻ ${cardRoll} từ '${CARD_STATUSES[currentStatus].text}' sang '${CARD_STATUSES[nextStatus].text}'.`);
-
-            } catch (error) {
-                console.error("Lỗi khi cập nhật trạng thái thẻ:", error);
-                showError("Lỗi cập nhật thẻ: " + error.message);
-            }
-        }
-
-        // Xóa thẻ (mở modal)
-        function handleDeleteCard(id) {
-            showDeleteConfirm("Xác nhận xóa thẻ", "Bạn có chắc muốn xóa thẻ này?", async () => {
-                try {
-                    // Lấy thông tin thẻ trước khi xóa để ghi log
-                    const cardRef = doc(db, cardCollectionRef.path, id);
-                    const cardDoc = await getDoc(cardRef);
-                    const cardRoll = cardDoc.data()?.roll || 'Thẻ không rõ';
-
-                    await deleteDoc(cardRef);
-                    await logHistory(`đã xóa thẻ ${cardRoll}.`);
-                    hideDeleteConfirm();
-                } catch (error) {
-                    console.error("Lỗi khi xóa thẻ:", error);
-                    showError("Lỗi xóa thẻ: " + error.message);
-                    hideDeleteConfirm();
-                }
-            });
-        }
-
-        // Thêm thiết bị mới
-        async function handleAddEquipment(e) {
-            e.preventDefault();
-            const name = document.getElementById('equipmentName').value;
-            const category = document.getElementById('equipmentCategory').value;
-            const notes = document.getElementById('equipmentNotes').value; // Thêm notes
-            if (!name || !category) {
-                showError("Vui lòng nhập Tên và Loại thiết bị.");
-                return;
-            }
-
-            try {
-                await addDoc(equipmentCollectionRef, {
-                    name: name,
-                    category: category,
-                    notes: notes || "", // Lưu notes
-                    status: 'READY', // Mặc định là 'Sẵn sàng'
-                    createdAt: serverTimestamp(),
-                    userId: userId,
-                    userName: userDisplayName // Lưu lại ai đã tạo
-                });
-                // Ghi lịch sử
-                await logHistory(`đã thêm thiết bị ${name} (${category}).`);
-                // Reset form
-                e.target.reset();
-            } catch (error) {
-                console.error("Lỗi khi thêm thiết bị:", error);
-                showError("Lỗi thêm thiết bị: " + error.message);
-            }
-        }
-
-        // Thay đổi trạng thái thiết bị
-        async function handleChangeEquipmentStatus(e) {
-            const select = e.currentTarget;
-            const id = select.getAttribute('data-id');
-            const newStatus = select.value;
-            const currentStatus = select.getAttribute('data-current-status');
-
-            if (newStatus === currentStatus) return; // Không thay đổi
-
-            try {
-                const equipmentRef = doc(db, equipmentCollectionRef.path, id);
-                await updateDoc(equipmentRef, {
-                    status: newStatus
-                });
-                // Cập nhật lại attribute để lần sau so sánh cho đúng
-                select.setAttribute('data-current-status', newStatus);
-
-                // Ghi lịch sử
-                const eqDoc = await getDoc(equipmentRef);
-                const eqName = eqDoc.data()?.name || 'Thiết bị không rõ';
-                await logHistory(`đã chuyển trạng thái thiết bị ${eqName} từ '${EQUIPMENT_STATUSES[currentStatus].text}' sang '${EQUIPMENT_STATUSES[newStatus].text}'.`);
-
-                // Cập nhật màu sắc của select
-                const statusInfo = EQUIPMENT_STATUSES[newStatus] || EQUIPMENT_STATUSES.READY;
-                // Xóa các class màu cũ
-                Object.values(EQUIPMENT_STATUSES).forEach(s => select.classList.remove(s.color));
-                // Thêm class màu mới
-                select.classList.add(statusInfo.color);
-
-            } catch (error) {
-                console.error("Lỗi khi cập nhật trạng thái thiết bị:", error);
-                showError("Lỗi cập nhật thiết bị: " + error.message);
-                // Reset select về trạng thái cũ nếu lỗi
-                select.value = currentStatus;
-            }
-        }
-
-        // Xóa thiết bị (mở modal)
-        function handleDeleteEquipment(id) {
-            showDeleteConfirm("Xác nhận xóa thiết bị", "Bạn có chắc muốn xóa thiết bị này?", async () => {
-                try {
-                    // Lấy thông tin trước khi xóa
-                    const equipmentRef = doc(db, equipmentCollectionRef.path, id);
-                    const eqDoc = await getDoc(equipmentRef);
-                    const eqName = eqDoc.data()?.name || 'Thiết bị không rõ';
-
-                    await deleteDoc(equipmentRef);
-                    await logHistory(`đã xóa thiết bị ${eqName}.`);
-                    hideDeleteConfirm();
-                } catch (error) {
-                    console.error("Lỗi khi xóa thiết bị:", error);
-                    showError("Lỗi xóa thiết bị: " + error.message);
-                    hideDeleteConfirm();
-                }
-            });
-        }
-
-
-        // --- HÀM TIỆN ÍCH (UI) ---
-
-        // MỚI: Hàm helper để format timestamp
-        function formatTimestamp(timestamp) {
-            if (!timestamp || !timestamp.seconds) {
-                return null;
-            }
-            const date = new Date(timestamp.seconds * 1000);
-            return date.toLocaleString('vi-VN', {
-                hour: '2-digit', minute: '2-digit', second: '2-digit',
-                day: '2-digit', month: '2-digit', year: 'numeric'
-            });
-        }
-
-        // Hiển thị/ẩn Loading
-        function showLoading() {
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.add('hidden');
-            showMainContent(); // Hiển thị nội dung chính khi hết loading
-        }
-
-        function showMainContent() {
-            document.getElementById('mainContent').classList.remove('hidden');
-        }
-
-        // Hiển thị thông báo lỗi
+        // --- Thông báo ---
         function showError(message) {
-            const errorEl = document.getElementById('errorNotification');
-            document.getElementById('errorMessage').textContent = message;
-            errorEl.classList.add('show');
-            // Tự động ẩn sau 5 giây
-            setTimeout(() => {
-                errorEl.classList.remove('show');
-            }, 5000);
+            globalErrorMessage.textContent = message;
+            globalError.classList.remove('hidden');
+            setTimeout(() => globalError.classList.add('hidden'), 5000);
         }
 
-        // Hiển thị thông báo thành công
         function showSuccess(message) {
-            const successEl = document.getElementById('successNotification');
-            document.getElementById('successMessage').textContent = message;
-            successEl.classList.remove('translate-y-full', 'opacity-0');
-            // Tự động ẩn sau 3 giây
-            setTimeout(() => {
-                successEl.classList.add('translate-y-full', 'opacity-0');
-            }, 3000);
+            globalSuccessMessage.textContent = message;
+            globalSuccess.classList.remove('hidden');
+            setTimeout(() => globalSuccess.classList.add('hidden'), 3000);
         }
 
-        // Hiển thị/ẩn Modal xác nhận
+        // --- Modals ---
         function showDeleteConfirm(title, message, onConfirm) {
             document.getElementById('confirmDeleteTitle').textContent = title;
             document.getElementById('confirmDeleteMessage').textContent = message;
@@ -1182,244 +978,460 @@ A001C003.mxf
             modal.classList.remove('hidden');
             setTimeout(() => { // Delay nhỏ để transition hoạt động
                 modal.classList.remove('opacity-0');
-                modal.querySelector('.bg-white').classList.remove('scale-95');
+                modal.querySelector('.dark\\:bg-gray-800\\/80').classList.remove('scale-95');
             }, 10);
         }
 
         function hideDeleteConfirm() {
             const modal = document.getElementById('confirmDeleteModal');
             modal.classList.add('opacity-0');
-            modal.querySelector('.bg-white, .dark\\:bg-gray-800').classList.add('scale-95'); // Cập nhật selector
+            modal.querySelector('.dark\\:bg-gray-800\\/80').classList.add('scale-95');
             setTimeout(() => { // Chờ transition kết thúc 
                 modal.classList.add('hidden');
-                deleteCallback = null; // Xóa callback
+                deleteCallback = null;
             }, 300);
         }
 
-        // MỚI: Hàm mở/đóng Modal Manifest
-        function openManifestModal(id, roll, currentManifest) {
-            document.getElementById('manifestCardId').value = id;
-            document.getElementById('manifestCardRoll').value = roll;
-            document.getElementById('fileManifestTextarea').value = currentManifest || '';
-            document.getElementById('fileManifestTitle').textContent = `Manifest File cho Thẻ ${roll}`;
+        function showManifestModal(cardId, cardRoll, currentManifest) {
+            manifestCardId.value = cardId;
+            manifestCardRoll.value = cardRoll;
+            fileManifestTitle.textContent = `Quản lý Manifest File cho [${cardRoll}]`;
+            fileManifestTextarea.value = unescape(currentManifest);
 
             const modal = document.getElementById('fileManifestModal');
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
-                modal.querySelector('.dark\\:bg-gray-800').classList.remove('scale-95');
+                modal.querySelector('.dark\\:bg-gray-800\\/80').classList.remove('scale-95');
             }, 10);
         }
 
         function hideManifestModal() {
             const modal = document.getElementById('fileManifestModal');
             modal.classList.add('opacity-0');
-            modal.querySelector('.dark\\:bg-gray-800').classList.add('scale-95');
+            modal.querySelector('.dark\\:bg-gray-800\\/80').classList.add('scale-95');
             setTimeout(() => {
                 modal.classList.add('hidden');
             }, 300);
         }
 
-        // MỚI: Hàm lưu Manifest
-        async function handleSaveManifest() {
-            const id = document.getElementById('manifestCardId').value;
-            const roll = document.getElementById('manifestCardRoll').value;
-            const newManifest = document.getElementById('fileManifestTextarea').value;
-
-            if (!id) {
-                showError("Lỗi: Không tìm thấy ID của thẻ.");
-                return;
-            }
-
-            try {
-                const cardRef = doc(db, cardCollectionRef.path, id);
-                await updateDoc(cardRef, {
-                    fileManifest: newManifest
-                });
-
-                await logHistory(`đã cập nhật manifest file cho thẻ ${roll}.`);
-                showSuccess("Đã lưu manifest thành công!");
-                hideManifestModal();
-                
-            } catch (error) {
-                console.error("Lỗi khi lưu manifest:", error);
-                showError("Lỗi lưu manifest: " + error.message);
-            }
+        // Tiện ích Escape (dùng cho data-attribute)
+        function escape(str) {
+            return str.replace(/[&<>"']/g, function (match) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[match];
+            });
         }
 
-
-        // MỚI: Hàm xuất lịch sử ra PDF
-        function handleExportHistoryToPDF() {
-            console.log("Đang chuẩn bị xuất PDF...");
-
-            // 1. Định nghĩa font (Quan trọng cho tiếng Việt)
-            pdfMake.fonts = {
-                Roboto: {
-                    normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
-                    bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
-                    italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
-                    bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
-                }
-            };
-
-            // 2. Lấy dữ liệu đã lọc
-            const selectedDateStr = document.getElementById('historyDateFilter').value;
-            let filteredLogs = allHistoryLogs;
-            let reportTitle = "Báo cáo Toàn bộ Lịch sử Hoạt động";
-            let fileName = `BaoCao_TatCaLichSu_${new Date().getTime()}.pdf`;
-
-            if (selectedDateStr) {
-                filteredLogs = allHistoryLogs.filter(log => {
-                    if (!log.timestamp || !log.timestamp.seconds) return false;
-                    const logDate = new Date(log.timestamp.seconds * 1000);
-                    const logDateStr = logDate.getFullYear() + '-' +
-                        ('0' + (logDate.getMonth() + 1)).slice(-2) + '-' +
-                        ('0' + logDate.getDate()).slice(-2);
-                    return logDateStr === selectedDateStr;
-                });
-                
-                // Chuyển YYYY-MM-DD sang DD/MM/YYYY cho tiêu đề
-                const [year, month, day] = selectedDateStr.split('-');
-                reportTitle = `Báo cáo Lịch sử Ngày ${day}/${month}/${year}`;
-                fileName = `BaoCao_${selectedDateStr.replace(/-/g, '')}.pdf`;
-            }
-
-            if (filteredLogs.length === 0) {
-                showError("Không có dữ liệu lịch sử để xuất.");
-                return;
-            }
-
-            // 3. Chuẩn bị nội dung cho bảng
-            const tableBody = [
-                // Header
-                [
-                    { text: 'Thời gian', style: 'tableHeader' },
-                    { text: 'Người dùng', style: 'tableHeader' },
-                    { text: 'Hành động', style: 'tableHeader' }
-                ]
-            ];
-
-            // Thêm các dòng dữ liệu (giống thứ tự hiển thị, mới nhất -> cũ nhất)
-            filteredLogs.forEach(log => {
-                const logDate = new Date((log.timestamp?.seconds || 0) * 1000);
-                const timestamp = logDate.toLocaleString('vi-VN', {
-                    hour: '2-digit', minute: '2-digit', second: '2-digit',
-                    day: '2-digit', month: '2-digit', year: 'numeric' // Thêm ngày tháng năm cho rõ ràng
-                });
-                const actor = log.userName || `User (${(log.userId || '...').substring(0, 4)})`;
-                
-                tableBody.push([
-                    { text: timestamp, style: 'tableCell' },
-                    { text: actor, style: 'tableCell' },
-                    { text: log.message, style: 'tableCell' }
-                ]);
+        function unescape(str) {
+            return str.replace(/&amp;|&lt;|&gt;|&quot;|&#39;/g, function (match) {
+                return {
+                    '&amp;': '&',
+                    '&lt;': '<',
+                    '&gt;': '>',
+                    '&quot;': '"',
+                    '&#39;': "'"
+                }[match];
             });
+        }
 
-            // 4. Định nghĩa tài liệu
-            const docDefinition = {
-                content: [
-                    { text: reportTitle, style: 'header' },
-                    { text: `Tạo bởi: ${userDisplayName} (ID: ${userId})`, style: 'subheader' },
-                    { text: `Ngày tạo báo cáo: ${new Date().toLocaleString('vi-VN')}`, style: 'subheader' },
-                    {
-                        style: 'tableMain',
-                        table: {
-                            headerRows: 1,
-                            widths: ['auto', 'auto', '*'], // Cột 1, 2 tự động, cột 3 co giãn
-                            body: tableBody
-                        },
-                        layout: {
-                            fillColor: function (rowIndex, node, columnIndex) {
-                                return (rowIndex === 0) ? '#DEDEDE' : null; // Màu xám cho header
+        // --- Xử lý PDF (pdfmake) ---
+        // Cấu hình font tiếng Việt cho pdfmake
+        pdfMake.fonts = {
+            Roboto: {
+                normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/fonts/Roboto/Roboto-Regular.ttf',
+                bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/fonts/Roboto/Roboto-Medium.ttf',
+                italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/fonts/Roboto/Roboto-Italic.ttf',
+                bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/fonts/Roboto/Roboto-MediumItalic.ttf'
+            }
+        };
+
+        async function handleExportPdf() {
+            loadingOverlay.classList.remove('hidden');
+
+            try {
+                let filteredHistory = allHistory;
+                let title = "Báo cáo Lịch sử Toàn bộ";
+                let dateStr = new Date().toLocaleDateString('vi-VN');
+
+                // Lọc theo ngày (nếu có)
+                if (currentDateFilter) {
+                    filteredHistory = allHistory.filter(log => {
+                        if (!log.createdAt) return false;
+                        const logDate = log.createdAt.toDate().toISOString().split('T')[0];
+                        return logDate === currentDateFilter;
+                    });
+                    const d = new Date(currentDateFilter + 'T12:00:00Z'); // Dùng T12h để tránh lỗi timezone
+                    dateStr = d.toLocaleDateString('vi-VN');
+                    title = `Báo cáo Lịch sử Ngày: ${dateStr}`;
+                }
+
+                // Sắp xếp: Cũ nhất lên đầu cho báo cáo
+                filteredHistory.sort((a, b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0));
+
+                if (filteredHistory.length === 0) {
+                    showError("Không có lịch sử nào để xuất file PDF.");
+                    loadingOverlay.classList.add('hidden');
+                    return;
+                }
+
+                const tableBody = [
+                    [
+                        { text: 'Thời gian', style: 'tableHeader' },
+                        { text: 'Người dùng', style: 'tableHeader' },
+                        { text: 'Hành động', style: 'tableHeader' }
+                    ]
+                ];
+
+                filteredHistory.forEach(log => {
+                    const logDate = log.createdAt ? log.createdAt.toDate() : new Date();
+                    const timeStr = logDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    tableBody.push(
+                        [
+                            timeStr,
+                            log.userName || 'N/A',
+                            log.action || 'N/A'
+                        ]
+                    );
+                });
+
+                const docDefinition = {
+                    content: [
+                        { text: title, style: 'header' },
+                        { text: `Người tạo: ${displayName} (${userEmail})`, style: 'subheader' },
+                        { text: `Ngày xuất: ${new Date().toLocaleString('vi-VN')}`, style: 'subheader' },
+                        {
+                            style: 'tableExample',
+                            table: {
+                                widths: ['auto', 'auto', '*'],
+                                body: tableBody
+                            },
+                            layout: {
+                                // Giao diện bảng đẹp hơn
+                                fillColor: function (rowIndex, node, columnIndex) {
+                                    return (rowIndex === 0) ? '#4A5568' : (rowIndex % 2 === 0) ? '#2D3748' : '#1A202C';
+                                },
+                                hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 1 : 1; },
+                                vLineWidth: function (i, node) { return (i === 0 || i === node.table.widths.length) ? 1 : 1; },
+                                hLineColor: function (i, node) { return '#4A5568'; },
+                                vLineColor: function (i, node) { return '#4A5568'; },
                             }
                         }
-                    }
-                ],
-                styles: {
-                    header: {
-                        fontSize: 18,
-                        bold: true,
-                        margin: [0, 0, 0, 10]
+                    ],
+                    styles: {
+                        header: {
+                            fontSize: 18,
+                            bold: true,
+                            margin: [0, 0, 0, 10],
+                            color: '#E2E8F0' // gray-200
+                        },
+                        subheader: {
+                            fontSize: 10,
+                            italic: true,
+                            margin: [0, 0, 0, 10],
+                            color: '#A0AEC0' // gray-400
+                        },
+                        tableExample: {
+                            margin: [0, 5, 0, 15],
+                            color: '#CBD5E0' // gray-300
+                        },
+                        tableHeader: {
+                            bold: true,
+                            fontSize: 13,
+                            color: 'white',
+                            fillColor: '#4A5568'
+                        }
                     },
-                    subheader: {
-                        fontSize: 10,
-                        italics: true,
-                        margin: [0, 2, 0, 5]
+                    defaultStyle: {
+                        font: 'Roboto',
+                        color: '#E2E8F0'
                     },
-                    tableMain: {
-                        margin: [0, 5, 0, 15]
-                    },
-                    tableHeader: {
-                        bold: true,
-                        fontSize: 12,
-                        color: 'black'
-                    },
-                    tableCell: {
-                        fontSize: 10
-                    }
-                },
-                defaultStyle: {
-                    font: 'Roboto' // BẮT BUỘC dùng font đã định nghĩa
-                }
-            };
+                    background: '#1A202C' // gray-900
+                };
 
-            // 5. Tạo và tải PDF
-            try {
-                pdfMake.createPdf(docDefinition).download(fileName);
+                pdfMake.createPdf(docDefinition).download(`LichSuHoatDong_${dateStr.replace(/\//g, '-')}.pdf`);
+                showSuccess("Đã xuất file PDF thành công!");
+
             } catch (error) {
-                console.error("Lỗi khi tạo PDF:", error);
-                showError("Lỗi tạo PDF: " + error.message);
+                console.error("Lỗi xuất PDF: ", error);
+                showError("Đã xảy ra lỗi khi tạo file PDF.");
+            } finally {
+                loadingOverlay.classList.add('hidden');
             }
         }
 
-        // Hàm xử lý khi nhấn nút "Xóa" trên modal
-        function handleConfirmDelete() {
-            if (typeof deleteCallback === 'function') {
-                deleteCallback();
-            }
-            // hideDeleteConfirm() sẽ được gọi bên trong hàm callback (sau khi xóa xong)
-        }
 
+        // --- Gán các sự kiện (Chỉ chạy 1 lần) ---
+        function setupEventListeners() {
+            // (Hủy các listener cũ để tránh gán đè)
+            // Code này phức tạp, tạm thời bỏ qua vì chúng ta kiểm soát = onAuthStateChanged
 
-        // --- ĐĂNG KÝ SỰ KIỆN BAN ĐẦU ---
+            // Lưu Tên hiển thị
+            saveNameBtn.addEventListener('click', async () => {
+                const newName = displayNameInput.value.trim();
+                if (newName && newName !== displayName) {
+                    loadingOverlay.classList.remove('hidden');
+                    try {
+                        const profileRef = doc(profilesCollection, userId);
+                        await setDoc(profileRef, { name: newName }, { merge: true });
+                        displayName = newName; // Cập nhật local state
+                        userDisplayName.textContent = newName;
+                        showSuccess("Đã cập nhật tên hiển thị!");
+                        await addHistoryLog(`đã đổi tên thành "${newName}"`);
+                    } catch (error) {
+                        console.error("Lỗi lưu tên: ", error);
+                        showError("Lỗi: " + error.message);
+                    } finally {
+                        loadingOverlay.classList.add('hidden');
+                    }
+                }
+            });
 
-        // Form thêm thẻ
-        document.getElementById('addCardForm').addEventListener('submit', handleAddCard);
-        // Form thêm thiết bị
-        document.getElementById('addEquipmentForm').addEventListener('submit', handleAddEquipment);
-        // Nút Hủy và Xác nhận Xóa trên Modal
-        document.getElementById('cancelDeleteBtn').addEventListener('click', hideDeleteConfirm);
-        document.getElementById('confirmDeleteBtn').addEventListener('click', handleConfirmDelete);
-        // Nút Lưu Tên
-        document.getElementById('saveNameBtn').addEventListener('click', handleSaveName);
+            // Form Thêm Thiết bị
+            addEquipmentForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('equipmentName').value;
+                const category = document.getElementById('equipmentCategory').value;
+                const notes = document.getElementById('equipmentNotes').value;
 
-        // MỚI: Nút trên Modal Manifest
-        document.getElementById('saveManifestBtn').addEventListener('click', handleSaveManifest);
-        document.getElementById('cancelManifestBtn').addEventListener('click', hideManifestModal);
-        document.getElementById('closeManifestModalBtn').addEventListener('click', hideManifestModal);
+                loadingOverlay.classList.remove('hidden');
+                try {
+                    await addDoc(equipmentCollection, {
+                        name: name,
+                        category: category,
+                        notes: notes,
+                        status: 'ready', // Mặc định là sẵn sàng
+                        createdAt: serverTimestamp(),
+                        createdBy: userId
+                    });
+                    await addHistoryLog(`đã thêm thiết bị mới: "${name}"`);
+                    addEquipmentForm.reset();
+                    showSuccess("Đã thêm thiết bị!");
+                } catch (error) {
+                    console.error("Lỗi thêm thiết bị: ", error);
+                    showError("Lỗi: " + error.message);
+                } finally {
+                    loadingOverlay.classList.add('hidden');
+                }
+            });
 
-        // Thanh Tìm kiếm
-        document.getElementById('searchCardInput').addEventListener('input', renderAndFilterCards);
-        document.getElementById('searchEquipmentInput').addEventListener('input', renderAndFilterEquipment);
+            // Form Thêm Thẻ
+            addCardForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const roll = document.getElementById('cardRoll').value;
+                const source = document.getElementById('cardSource').value;
+                const notes = document.getElementById('cardNotes').value;
 
-        // MỚI: Lịch sử Hoạt động - Bộ lọc ngày
-        document.getElementById('historyDateFilter').addEventListener('change', renderAndFilterHistoryLog);
-        document.getElementById('resetHistoryFilter').addEventListener('click', () => {
-            document.getElementById('historyDateFilter').value = ""; // Xóa giá trị date picker
-            renderAndFilterHistoryLog(); // Render lại
-        });
-        // MỚI: Nút Xuất PDF
-        document.getElementById('exportHistoryPdfBtn').addEventListener('click', handleExportHistoryToPDF);
+                loadingOverlay.classList.remove('hidden');
+                try {
+                    await addDoc(cardsCollection, {
+                        roll: roll,
+                        source: source,
+                        notes: notes,
+                        status: 'empty', // Mặc định là trống
+                        createdAt: serverTimestamp(),
+                        createdBy: userId
+                    });
+                    await addHistoryLog(`đã thêm thẻ mới: "${roll}"`);
+                    addCardForm.reset();
+                    showSuccess("Đã thêm thẻ!");
+                } catch (error) {
+                    console.error("Lỗi thêm thẻ: ", error);
+                    showError("Lỗi: " + error.message);
+                } finally {
+                    loadingOverlay.classList.add('hidden');
+                }
+            });
 
-        // --- KHỞI CHẠY ỨNG DỤNG ---
-        // Bắt đầu quá trình khởi tạo Firebase
-        initializeFirebase();
+            // Gán sự kiện click cho các nút động (dùng event delegation)
+            document.body.addEventListener('click', async (e) => {
+                // Xóa Thiết bị
+                const deleteEquipBtn = e.target.closest('.delete-equipment-btn');
+                if (deleteEquipBtn) {
+                    const id = deleteEquipBtn.dataset.id;
+                    const item = allEquipment.find(i => i.id === id);
+                    const itemName = item ? `"${item.name}"` : "mục này";
+                    showDeleteConfirm(
+                        'Xóa Thiết bị',
+                        `Bạn có chắc chắn muốn xóa ${itemName}? Hành động này không thể hoàn tác.`,
+                        async () => {
+                            loadingOverlay.classList.remove('hidden');
+                            try {
+                                const itemRef = doc(equipmentCollection, id);
+                                await deleteDoc(itemRef);
+                                await addHistoryLog(`đã xóa thiết bị: ${itemName}`);
+                                showSuccess("Đã xóa thiết bị.");
+                            } catch (error) {
+                                console.error("Lỗi xóa thiết bị: ", error);
+                                showError("Lỗi: " + error.message);
+                            } finally {
+                                loadingOverlay.classList.add('hidden');
+                                hideDeleteConfirm();
+                            }
+                        }
+                    );
+                }
+
+                // Xóa Thẻ
+                const deleteCardBtn = e.target.closest('.delete-card-btn');
+                if (deleteCardBtn) {
+                    const id = deleteCardBtn.dataset.id;
+                    const item = allCards.find(i => i.id === id);
+                    const itemName = item ? `"${item.roll}"` : "mục này";
+                    showDeleteConfirm(
+                        'Xóa Thẻ nhớ',
+                        `Bạn có chắc chắn muốn xóa ${itemName}? Hành động này không thể hoàn tác.`,
+                        async () => {
+                            loadingOverlay.classList.remove('hidden');
+                            try {
+                                const itemRef = doc(cardsCollection, id);
+                                await deleteDoc(itemRef);
+                                await addHistoryLog(`đã xóa thẻ: ${itemName}`);
+                                showSuccess("Đã xóa thẻ.");
+                            } catch (error) {
+                                console.error("Lỗi xóa thẻ: ", error);
+                                showError("Lỗi: " + error.message);
+                            } finally {
+                                loadingOverlay.classList.add('hidden');
+                                hideDeleteConfirm();
+                            }
+                        }
+                    );
+                }
+
+                // Cập nhật trạng thái Thẻ
+                const updateCardStatusBtn = e.target.closest('.card-status-btn');
+                if (updateCardStatusBtn) {
+                    const id = updateCardStatusBtn.dataset.id;
+                    const nextStatus = updateCardStatusBtn.dataset.nextStatus;
+                    const roll = updateCardStatusBtn.dataset.roll;
+                    const statusInfo = getCardStatusInfo(nextStatus);
+
+                    const updateData = { status: nextStatus };
+                    
+                    // Ghi lại thời gian bắt đầu/kết thúc
+                    if (nextStatus === 'offloading') {
+                        updateData.offloadStartTime = serverTimestamp();
+                    } else if (nextStatus === 'offloaded') {
+                        updateData.offloadEndTime = serverTimestamp();
+                    }
+
+                    loadingOverlay.classList.remove('hidden');
+                    try {
+                        const itemRef = doc(cardsCollection, id);
+                        await updateDoc(itemRef, updateData);
+                        await addHistoryLog(`đã cập nhật thẻ "${roll}" sang trạng thái: ${statusInfo.text}`);
+                        showSuccess(`Đã cập nhật thẻ ${roll}!`);
+                    } catch (error) {
+                        console.error("Lỗi cập nhật thẻ: ", error);
+                        showError("Lỗi: " + error.message);
+                    } finally {
+                        loadingOverlay.classList.add('hidden');
+                    }
+                }
+
+                // Mở Modal Manifest
+                const manageManifestBtn = e.target.closest('.manage-manifest-btn');
+                if (manageManifestBtn) {
+                    const id = manageManifestBtn.dataset.id;
+                    const roll = manageManifestBtn.dataset.roll;
+                    const manifest = manageManifestBtn.dataset.manifest;
+                    showManifestModal(id, roll, manifest);
+                }
+            });
+
+            // Gán sự kiện change cho các select động (dùng event delegation)
+            document.body.addEventListener('change', async (e) => {
+                // Cập nhật trạng thái Thiết bị
+                const statusSelect = e.target.closest('.equipment-status-select');
+                if (statusSelect) {
+                    const id = statusSelect.dataset.id;
+                    const newStatus = statusSelect.value;
+                    const currentStatus = statusSelect.dataset.currentStatus;
+                    
+                    if (newStatus === currentStatus) return; // Không thay đổi
+
+                    const statusInfo = getEquipmentStatusInfo(newStatus);
+                    const item = allEquipment.find(i => i.id === id);
+                    const itemName = item ? `"${item.name}"` : "mục này";
+
+                    loadingOverlay.classList.remove('hidden');
+                    try {
+                        const itemRef = doc(equipmentCollection, id);
+                        await updateDoc(itemRef, { status: newStatus });
+                        statusSelect.dataset.currentStatus = newStatus; // Cập nhật trạng thái hiện tại
+                        await addHistoryLog(`đã cập nhật ${itemName} sang trạng thái: ${statusInfo.text}`);
+                        showSuccess(`Đã cập nhật ${itemName}!`);
+                    } catch (error) {
+                        console.error("Lỗi cập nhật thiết bị: ", error);
+                        showError("Lỗi: " + error.message);
+_                    } finally {
+                        loadingOverlay.classList.add('hidden');
+                    }
+                }
+            });
+
+            // Gán sự kiện input cho các thanh Tìm kiếm
+            searchEquipmentInput.addEventListener('input', () => renderEquipment(allEquipment));
+            searchCardInput.addEventListener('input', () => renderCards(allCards));
+
+            // Gán sự kiện cho bộ lọc Lịch sử
+            historyDateFilter.addEventListener('change', (e) => {
+                currentDateFilter = e.target.value;
+                renderHistory(allHistory);
+            });
+            resetHistoryFilter.addEventListener('click', () => {
+                currentDateFilter = null;
+                historyDateFilter.value = ''; // Xóa giá trị trong input
+                renderHistory(allHistory);
+            });
+
+            // Nút Xuất PDF
+            exportHistoryPdfBtn.addEventListener('click', handleExportPdf);
+
+            // Nút Modal Xóa
+            cancelDeleteBtn.addEventListener('click', hideDeleteConfirm);
+            confirmDeleteBtn.addEventListener('click', () => {
+                if (deleteCallback) {
+                    deleteCallback();
+                }
+            });
+
+            // Nút Modal Manifest
+            closeManifestModalBtn.addEventListener('click', hideManifestModal);
+            cancelManifestBtn.addEventListener('click', hideManifestModal);
+            saveManifestBtn.addEventListener('click', async () => {
+                const id = manifestCardId.value;
+                const roll = manifestCardRoll.value;
+                const manifestText = fileManifestTextarea.value;
+                
+                if (!id) return;
+                
+                loadingOverlay.classList.remove('hidden');
+                try {
+                    const itemRef = doc(cardsCollection, id);
+                    await updateDoc(itemRef, { fileManifest: manifestText });
+                    await addHistoryLog(`đã cập nhật manifest file cho thẻ "${roll}"`);
+                    showSuccess(`Đã lưu manifest cho ${roll}!`);
+                    hideManifestModal();
+                } catch (error)
+                {
+                    console.error("Lỗi lưu manifest: ", error);
+                    showError("Lỗi: " + error.message);
+                } finally {
+                    loadingOverlay.classList.add('hidden');
+                }
+            });
+
+        } // Kết thúc hàm setupEventListeners
 
     </script>
 </body>
 
 </html>
-
-
-
 
