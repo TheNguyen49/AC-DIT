@@ -286,6 +286,40 @@
         </div>
     </div>
 
+    <!-- MỚI: Modal Quản lý Manifest File -->
+    <div id="fileManifestModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-40 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg transform scale-95 transition-transform duration-300">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="fileManifestTitle">Quản lý Manifest File</h3>
+                <button id="closeManifestModalBtn" class="text-gray-400 hover:text-gray-300">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
+            </div>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-300 mb-4" id="fileManifestMessage">
+                Dán danh sách file đã sao chép từ thẻ vào ô dưới đây. Điều này sẽ được lưu lại làm bằng chứng offload.
+            </p>
+            <input type="hidden" id="manifestCardId">
+            <input type="hidden" id="manifestCardRoll">
+            <textarea id="fileManifestTextarea" rows="15"
+                class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
+                placeholder="A001C001.mxf
+A001C002.mxf
+A001C003.mxf
+..."></textarea>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" id="cancelManifestBtn"
+                    class="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-md shadow-sm hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 transition duration-200">
+                    Hủy
+                </button>
+                <button type="button" id="saveManifestBtn"
+                    class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200">
+                    Lưu Manifest
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Thông báo lỗi -->
     <div id="errorNotification"
         class="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-lg shadow-lg z-50 transition-transform duration-300 ease-out translate-y-full opacity-0">
@@ -621,6 +655,26 @@
                 const nextStatusKey = statusInfo.next;
                 const nextStatusInfo = nextStatusKey ? CARD_STATUSES[nextStatusKey] : null;
 
+                // MỚI: Lấy và format thời gian copy
+                const startTime = formatTimestamp(card.copyStartTime);
+                const endTime = formatTimestamp(card.copyEndTime);
+                let timeLogHtml = '';
+                
+                if (startTime) {
+                    timeLogHtml += `
+                        <p class="text-xs text-gray-400 mt-1">
+                            <i class="ph ph-play-circle text-blue-400"></i> Bắt đầu copy: <span class="font-mono">${startTime}</span>
+                        </p>
+                    `;
+                }
+                if (endTime) {
+                     timeLogHtml += `
+                        <p class="text-xs text-gray-400 mt-1">
+                            <i class="ph ph-stop-circle text-green-400"></i> Kết thúc copy: <span class="font-mono">${endTime}</span>
+                        </p>
+                    `;
+                }
+
                 const cardEl = document.createElement('div');
                 cardEl.className = `p-4 rounded-lg shadow-md border-l-4 ${statusInfo.color.replace('bg-', 'border-')} ${statusInfo.color} bg-opacity-20`;
                 cardEl.innerHTML = `
@@ -631,12 +685,29 @@
                     <p class="text-xs text-gray-400 mt-1">
                         Trạng thái: <span class="font-semibold ${statusInfo.color} px-2 py-0.5 rounded">${statusInfo.text}</span>
                     </p>
+                    
+                    <!-- MỚI: Hiển thị lịch sử copy -->
+                    <div class="mt-2">
+                        ${timeLogHtml}
+                    </div>
+
                     <!-- Hiển thị Ghi chú -->
                     ${card.notes ? `
                         <p class="text-sm text-gray-300 mt-2 bg-gray-700 p-2 rounded-md whitespace-pre-wrap font-mono text-xs">
                             <i class="ph ph-note mr-1"></i>${card.notes}
                         </p>
                     ` : ''}
+
+                    <!-- MỚI: Hiển thị Manifest File -->
+                    ${card.fileManifest ? `
+                        <details class="mt-2">
+                            <summary class="text-sm text-blue-300 cursor-pointer hover:underline">Xem Manifest File (${(card.fileManifest.match(/\n/g) || []).length + 1} files)</summary>
+                            <pre class="text-xs text-gray-300 mt-2 bg-gray-900 p-3 rounded-md whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">${card.fileManifest}</pre>
+                        </details>
+                    ` : `
+                         <p class="text-sm text-gray-400 italic mt-2">Chưa có manifest file.</p>
+                    `}
+
                 </div>
                 <div class="flex flex-col items-end gap-2 flex-shrink-0 ml-4">
                     ${nextStatusInfo ? `
@@ -648,6 +719,11 @@
                     ` : `
                         <span class="text-sm font-medium text-green-300 px-3 py-1"><i class="ph-bold ph-check-circle"></i> Hoàn tất</span>
                     `}
+                    <!-- MỚI: Nút Quản lý Manifest -->
+                    <button data-id="${card.id}" data-roll="${card.roll}" data-manifest="${escape(card.fileManifest || '')}"
+                            class="manage-manifest-btn text-sm font-medium text-gray-300 hover:text-white px-3 py-1 rounded-md shadow-sm hover:bg-gray-700 flex items-center gap-1">
+                        <i class="ph ph-list-bullets"></i> Manifest
+                    </button>
                     <button data-id="${card.id}" class="delete-card-btn text-gray-400 hover:text-red-500 transition-colors">
                         <i class="ph-bold ph-trash text-lg"></i>
                     </button>
@@ -665,6 +741,16 @@
                 btn.addEventListener('click', (e) => {
                     const id = e.currentTarget.getAttribute('data-id');
                     handleDeleteCard(id);
+                });
+            });
+            // MỚI: Gắn listener cho nút Manifest
+            document.querySelectorAll('.manage-manifest-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    const roll = e.currentTarget.getAttribute('data-roll');
+                    // Dùng unescape để lấy lại giá trị gốc (vì manifest có thể chứa ký tự đặc biệt)
+                    const manifest = unescape(e.currentTarget.getAttribute('data-manifest'));
+                    openManifestModal(id, roll, manifest);
                 });
             });
         }
@@ -873,7 +959,10 @@
                     status: CARD_STATUS_ORDER[0], // Bắt đầu từ 'EMPTY'
                     createdAt: serverTimestamp(),
                     userId: userId,
-                    userName: userDisplayName // Lưu lại ai đã tạo
+                    userName: userDisplayName, // Lưu lại ai đã tạo
+                    copyStartTime: null, // MỚI: Khởi tạo
+                    copyEndTime: null,   // MỚI: Khởi tạo
+                    fileManifest: ""     // MỚI: Khởi tạo manifest rỗng
                 };
                 await addDoc(cardCollectionRef, newCard);
                 // Ghi lịch sử (message giờ chỉ cần hành động)
@@ -897,9 +986,22 @@
 
             try {
                 const cardRef = doc(db, cardCollectionRef.path, id);
-                await updateDoc(cardRef, {
+                
+                // MỚI: Thêm logic lưu thời gian
+                let updateData = {
                     status: nextStatus
-                });
+                };
+                
+                if (nextStatus === "OFFLOADING") {
+                    updateData.copyStartTime = serverTimestamp(); // Bắt đầu copy
+                }
+                
+                if (nextStatus === "OFFLOADED") {
+                    updateData.copyEndTime = serverTimestamp(); // Kết thúc copy
+                }
+
+                await updateDoc(cardRef, updateData); // Dùng updateData mới
+
                 // Ghi lịch sử
                 const cardDoc = await getDoc(cardRef);
                 const cardRoll = cardDoc.data()?.roll || 'Thẻ không rõ';
@@ -1022,6 +1124,18 @@
 
         // --- HÀM TIỆN ÍCH (UI) ---
 
+        // MỚI: Hàm helper để format timestamp
+        function formatTimestamp(timestamp) {
+            if (!timestamp || !timestamp.seconds) {
+                return null;
+            }
+            const date = new Date(timestamp.seconds * 1000);
+            return date.toLocaleString('vi-VN', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
+        }
+
         // Hiển thị/ẩn Loading
         function showLoading() {
             document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -1075,12 +1189,64 @@
         function hideDeleteConfirm() {
             const modal = document.getElementById('confirmDeleteModal');
             modal.classList.add('opacity-0');
-            modal.querySelector('.bg-white').classList.add('scale-95');
+            modal.querySelector('.bg-white, .dark\\:bg-gray-800').classList.add('scale-95'); // Cập nhật selector
             setTimeout(() => { // Chờ transition kết thúc 
                 modal.classList.add('hidden');
                 deleteCallback = null; // Xóa callback
             }, 300);
         }
+
+        // MỚI: Hàm mở/đóng Modal Manifest
+        function openManifestModal(id, roll, currentManifest) {
+            document.getElementById('manifestCardId').value = id;
+            document.getElementById('manifestCardRoll').value = roll;
+            document.getElementById('fileManifestTextarea').value = currentManifest || '';
+            document.getElementById('fileManifestTitle').textContent = `Manifest File cho Thẻ ${roll}`;
+
+            const modal = document.getElementById('fileManifestModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.dark\\:bg-gray-800').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function hideManifestModal() {
+            const modal = document.getElementById('fileManifestModal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('.dark\\:bg-gray-800').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // MỚI: Hàm lưu Manifest
+        async function handleSaveManifest() {
+            const id = document.getElementById('manifestCardId').value;
+            const roll = document.getElementById('manifestCardRoll').value;
+            const newManifest = document.getElementById('fileManifestTextarea').value;
+
+            if (!id) {
+                showError("Lỗi: Không tìm thấy ID của thẻ.");
+                return;
+            }
+
+            try {
+                const cardRef = doc(db, cardCollectionRef.path, id);
+                await updateDoc(cardRef, {
+                    fileManifest: newManifest
+                });
+
+                await logHistory(`đã cập nhật manifest file cho thẻ ${roll}.`);
+                showSuccess("Đã lưu manifest thành công!");
+                hideManifestModal();
+                
+            } catch (error) {
+                console.error("Lỗi khi lưu manifest:", error);
+                showError("Lỗi lưu manifest: " + error.message);
+            }
+        }
+
 
         // MỚI: Hàm xuất lịch sử ra PDF
         function handleExportHistoryToPDF() {
@@ -1227,6 +1393,11 @@
         // Nút Lưu Tên
         document.getElementById('saveNameBtn').addEventListener('click', handleSaveName);
 
+        // MỚI: Nút trên Modal Manifest
+        document.getElementById('saveManifestBtn').addEventListener('click', handleSaveManifest);
+        document.getElementById('cancelManifestBtn').addEventListener('click', hideManifestModal);
+        document.getElementById('closeManifestModalBtn').addEventListener('click', hideManifestModal);
+
         // Thanh Tìm kiếm
         document.getElementById('searchCardInput').addEventListener('input', renderAndFilterCards);
         document.getElementById('searchEquipmentInput').addEventListener('input', renderAndFilterEquipment);
@@ -1248,5 +1419,7 @@
 </body>
 
 </html>
+
+
 
 
