@@ -651,6 +651,13 @@ A001C003.mxf
             isInitialCardLoad = true;
             isInitialHistoryLoad = true;
 
+            // Kích hoạt âm thanh khi người dùng nhấp vào bất cứ đâu (chỉ chạy 1 lần)
+            const enableAudio = () => {
+                initAudio();
+                document.body.removeEventListener('click', enableAudio);
+            };
+            document.body.addEventListener('click', enableAudio, { once: true }); // Thêm { once: true }
+
             // Tải tên hiển thị
             loadDisplayName();
 
@@ -1553,4 +1560,3 @@ A001C003.mxf
 </body>
 
 </html>
-
