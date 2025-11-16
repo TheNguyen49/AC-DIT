@@ -651,12 +651,16 @@ A001C003.mxf
             isInitialCardLoad = true;
             isInitialHistoryLoad = true;
 
-            // Kích hoạt âm thanh khi người dùng nhấp vào bất cứ đâu (chỉ chạy 1 lần)
+            // Kích hoạt âm thanh khi người dùng tương tác lần đầu (click hoặc touch)
             const enableAudio = () => {
                 initAudio();
+                // Xóa cả hai listener sau khi chạy một lần
                 document.body.removeEventListener('click', enableAudio);
+                document.body.removeEventListener('touchstart', enableAudio);
             };
-            document.body.addEventListener('click', enableAudio, { once: true }); // Thêm { once: true }
+            // Thêm cả 'click' và 'touchstart' để đảm bảo hoạt động trên mobile/safari
+            document.body.addEventListener('click', enableAudio, { once: true });
+            document.body.addEventListener('touchstart', enableAudio, { once: true });
 
             // Tải tên hiển thị
             loadDisplayName();
